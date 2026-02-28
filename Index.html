@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Spend Together"/>
+  <meta name="theme-color" content="#141820"/>
+  <title>Spend Together</title>
+  <style>
+    html,body,#root{height:100%;margin:0;padding:0;overflow:hidden;}
+    body{background:#141820;}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@18.2.0",
+      "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+      "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime"
+    }
+  }
+  </script>
+  <script type="module">
+    import React, { useState, useEffect, useRef } from "react";
+    import { createRoot } from "react-dom/client";
+
+```
+// ─────────────────────────────────────────────────────────────────────────────
+// FIREBASE CONFIG
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyANRAg_zEiffHkxW1CzNKBSYYIaYknq-6s",
+  authDomain: "spend-together-1374d.firebaseapp.com",
+  databaseURL: "https://spend-together-1374d-default-rtdb.firebaseio.com",
+  projectId: "spend-together-1374d",
+  storageBucket: "spend-together-1374d.firebasestorage.app",
+  messagingSenderId: "574836971924",
+  appId: "1:574836971924:web:82689a74d1cd4c9cc19781"
+};
+const HOUSEHOLD_CODE = "our-budget";
+// ─────────────────────────────────────────────────────────────────────────────
+
+const LS_CATS   = "budget_cats_v11";
+const LS_EXPS   = "budget_exps_v11";
+const LS_THEME  = "budget_theme_v11";
+const LS_INCOME = "budget_income_v11";
+
+const DEFAULT_CATEGORIES = [
+  { id:"groceries",     name:"Groceries",     emoji:"🛒", color:"#27AE82", budget:600  },
+  { id:"dining",        name:"Dining Out",    emoji:"🍽️", color:"#E8703A", budget:300  },
+  { id:"transport",     name:"Transport",     emoji:"🚗", color:"#2E86C1", budget:200  },
+  { id:"utilities",     name:"Utilities",     emoji:"⚡", color:"#D4AC0D", budget:250  },
+  { id:"entertainment", name:"Entertainment", emoji:"🎬", color:"#8E44AD", budget:150  },
+  { id:"shopping",      name:"Shopping",      emoji:"🛍️", color:"#C0392B", budget:400  },
+  { id:"health",        name:"Health",        emoji:"💊", color:"#16A085", budget:150  },
+  { id:"savings",       name:"Savings",       emoji:"🏦", color:"#1E8449", budget:500  },
+];
+
+const DURATIONS = ["Weekly","Monthly","Yearly"];
+const MONTHS    = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function fmt(n)    { return new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(n); }
+function fmtDec(n) { return new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:2}).format(n); }
+
+function getSunTimes(lat, lng) {
+  const now    = new Date();
+  const start  = new Date(now.getFullYear(), 0, 0);
+  const diff   = now - start;
+  const oneDay = 1000 * 60 * 60 * 24;
+  const dayOfYear = Math.floor(diff / oneDay);
+  const B  = (360 / 365) * (dayOfYear - 81) * (Math.PI / 180);
+  const EoT = 9.87 * Math.sin(2*B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
+  const TC = 4 * lng + EoT;
+  const solarNoon = 720 - TC;
+  const latRad   = lat * (Math.PI / 180);
+  const decl     = 23.45 * Math.sin(B) * (Math.PI / 180);
+  const cosHA    = (Math.cos(90.833 * Math.PI/180) - Math.sin(latRad)*Math.sin(decl))
+                   / (Math.cos(latRad)*Math.cos(decl));
+  if (cosHA < -1 || cosHA > 1) return { sunrise: 6*60, sunset: 19*60 };
+  const HA      = Math.acos(cosHA) * (180 / Math.PI);
+  const offset  = now.getTimezoneOffset();
+  const sunrise = solarNoon - HA*4 - offset;
+  const sunset  = solarNoon + HA*4 - offset;
+  return { sunrise, sunset };
+}
+
+let _sunCache = null, _sunCacheDate = null, _cachedLat = null, _cachedLng = null;
+
+function isDaytime() {
+  const now = new Date();
+  const mins = now.getHours() * 60 + now.getMinutes();
+  const today = now.toDateString();
+  if (_sunCache && _sunCacheDate === today) return mins >= _sunCache.sunrise && mins < _sunCache.sunset;
+  if (_cachedLat !== null && _cachedLng !== null) {
+    _sunCache = getSunTimes(_cachedLat, _cachedLng);
+    _sunCacheDate = today;
+    return mins >= _sunCache.sunrise && mins < _sunCache.sunset;
+  }
+  return now.getHours() >= 6 && now.getHours() < 19;
+}
+
+function lsGet(k,f){ try{const v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch{return f;} }
+function lsSet(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn(e);} }
+
+function getTheme(isDark) {
+  return isDark ? {
+    bg:"#141820", bgHeader:"linear-gradient(180deg,#1D2330 0%,#141820 100%)",
+    bgCard:"rgba(255,255,255,0.04)", bgInput:"rgba(255,255,255,0.08)",
+    bgNav:"#1A1F2E", bgPill:"rgba(255,255,255,0.06)", bgPillActive:"rgba(255,255,255,0.15)",
+    bgSummary:"rgba(255,255,255,0.03)",
+    borderCard:"rgba(255,255,255,0.06)", borderInput:"rgba(255,255,255,0.12)",
+    borderNav:"rgba(255,255,255,0.07)", borderDash:"rgba(255,255,255,0.12)",
+    text:"#FFFFFF", textSub:"rgba(255,255,255,0.55)", textMuted:"rgba(255,255,255,0.35)",
+    textFaint:"rgba(255,255,255,0.2)", textNav:"rgba(255,255,255,0.28)",
+    accent:"#52D9A4", accentGrad:"linear-gradient(135deg,#52D9A4,#3BBFAD)", accentText:"#141820",
+    fillBg:"rgba(255,255,255,0.07)", over:"#FF5252", near:"#FFB74D", remaining:"#FFD54F",
+    shadow:"none", sidebarBg:"#1A1F2E", sidebarBorder:"rgba(255,255,255,0.07)",
+  } : {
+    bg:"#EEF2EE", bgHeader:"linear-gradient(180deg,#FFFFFF 0%,#EEF2EE 100%)",
+    bgCard:"#FFFFFF", bgInput:"#F5F8F5",
+    bgNav:"#FFFFFF", bgPill:"rgba(0,0,0,0.05)", bgPillActive:"rgba(0,0,0,0.12)",
+    bgSummary:"#FFFFFF",
+    borderCard:"rgba(0,0,0,0.07)", borderInput:"rgba(0,0,0,0.12)",
+    borderNav:"rgba(0,0,0,0.08)", borderDash:"rgba(0,0,0,0.12)",
+    text:"#1A1A1A", textSub:"rgba(0,0,0,0.6)", textMuted:"rgba(0,0,0,0.4)",
+    textFaint:"rgba(0,0,0,0.2)", textNav:"rgba(0,0,0,0.35)",
+    accent:"#1E8449", accentGrad:"linear-gradient(135deg,#27AE82,#1E8449)", accentText:"#FFFFFF",
+    fillBg:"rgba(0,0,0,0.07)", over:"#C0392B", near:"#D35400", remaining:"#B7950B",
+    shadow:"0 2px 12px rgba(0,0,0,0.06)", sidebarBg:"#FFFFFF", sidebarBorder:"rgba(0,0,0,0.07)",
+  };
+}
+
+function fillColor(pct,base,t){ return pct>=1?t.over:pct>=0.85?t.near:base; }
+
+let firebaseDB=null;
+async function initFirebase(){
+  if(!FIREBASE_CONFIG) return false;
+  try{
+    const {initializeApp}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
+    const {getDatabase}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
+    const app=initializeApp(FIREBASE_CONFIG);
+    firebaseDB=getDatabase(app);
+    return true;
+  }catch(e){console.error(e);return false;}
+}
+
+function FillBar({pct,color,t}){
+  const clamp=Math.min(pct,1), fc=fillColor(pct,color,t);
+  return React.createElement("div",{style:{position:"relative",height:10,background:t.fillBg,borderRadius:99,overflow:"hidden"}},
+    React.createElement("div",{style:{position:"absolute",left:0,top:0,height:"100%",width:(clamp*100)+"%",
+      background:pct>=1?`repeating-linear-gradient(45deg,${fc} 0,${fc} 6px,${t.over}99 6px,${t.over}99 12px)`:fc,
+      borderRadius:99,transition:"width 0.7s cubic-bezier(0.34,1.56,0.64,1)",
+      boxShadow:pct>0?`0 0 8px ${fc}66`:"none"}}),
+    pct>1&&React.createElement("div",{style:{position:"absolute",right:0,top:"50%",transform:"translateY(-50%)",fontSize:9,color:t.over,fontWeight:800,paddingRight:4}},"OVER")
+  );
+}
+
+function SummaryRing({spent,total,t,size=128}){
+  const pct=total>0?Math.min(spent/total,1):0;
+  const r=size*0.42,cx=size/2,cy=size/2,circ=2*Math.PI*r;
+  const fc=pct>=1?t.over:pct>=0.85?t.near:t.accent;
+  const fs=size<110?11:15;
+  return React.createElement("svg",{width:size,height:size,style:{display:"block",flexShrink:0}},
+    React.createElement("circle",{cx,cy,r,fill:"none",stroke:t.fillBg,strokeWidth:size*0.078}),
+    React.createElement("circle",{cx,cy,r,fill:"none",stroke:fc,strokeWidth:size*0.078,
+      strokeDasharray:`${pct*circ} ${circ}`,strokeLinecap:"round",
+      transform:`rotate(-90 ${cx} ${cy})`,
+      style:{transition:"stroke-dasharray 0.8s cubic-bezier(0.34,1.56,0.64,1),stroke 0.4s"}}),
+    React.createElement("text",{x:cx,y:cy-fs*0.55,textAnchor:"middle",fill:t.text,fontSize:fs,fontWeight:800,fontFamily:"'Nunito',sans-serif"},fmt(spent)),
+    React.createElement("text",{x:cx,y:cy+fs*0.65,textAnchor:"middle",fill:t.textMuted,fontSize:fs-4,fontFamily:"'Nunito',sans-serif"},"of "+fmt(total)),
+    React.createElement("text",{x:cx,y:cy+fs*1.85,textAnchor:"middle",fill:fc,fontSize:fs-2,fontWeight:800,fontFamily:"'Nunito',sans-serif"},Math.round(pct*100)+"%")
+  );
+}
+
+function Lbl({children,t}){
+  return React.createElement("div",{style:{fontSize:10,color:t.textMuted,letterSpacing:2,textTransform:"uppercase",fontWeight:800,marginBottom:6}},children);
+}
+function StatRow({label,value,color,big,t}){
+  return React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}},
+    React.createElement("span",{style:{fontSize:11,color:t.textMuted}},label),
+    React.createElement("span",{style:{fontSize:big?16:13,fontWeight:big?900:700,color}},value)
+  );
+}
+function MoveBtn({index,total,onMove,t}){
+  const base={width:30,height:30,borderRadius:8,border:"none",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"inherit"};
+  return React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:3,flexShrink:0}},
+    React.createElement("button",{onClick:e=>{e.stopPropagation();onMove(index,-1);},disabled:index===0,
+      style:{...base,background:index===0?t.fillBg:t.bgPill,color:index===0?t.textFaint:t.textSub,cursor:index===0?"default":"pointer"}},"↑"),
+    React.createElement("button",{onClick:e=>{e.stopPropagation();onMove(index,1);},disabled:index===total-1,
+      style:{...base,background:index===total-1?t.fillBg:t.bgPill,color:index===total-1?t.textFaint:t.textSub,cursor:index===total-1?"default":"pointer"}},"↓")
+  );
+}
+function CatCard({cat,spent,t,isTablet,onClick}){
+  const pct=cat.budget>0?spent/cat.budget:0,over=pct>=1,near=pct>=0.85&&!over;
+  return React.createElement("div",{className:"cat-card",onClick,style:{
+    background:t.bgCard,borderRadius:isTablet?20:16,padding:isTablet?"18px 20px":"14px 16px",
+    border:`1px solid ${over?t.over+"44":near?t.near+"33":t.borderCard}`,boxShadow:t.shadow,cursor:"pointer"}},
+    React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}},
+      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
+        React.createElement("div",{style:{width:isTablet?44:36,height:isTablet?44:36,borderRadius:isTablet?14:10,background:cat.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:isTablet?22:18}},cat.emoji),
+        React.createElement("div",null,
+          React.createElement("div",{style:{fontWeight:800,fontSize:isTablet?15:14,color:t.text}},cat.name),
+          React.createElement("div",{style:{fontSize:11,color:t.textMuted,marginTop:1}},"Budget: "+fmt(cat.budget))
+        )
+      ),
+      React.createElement("div",{style:{textAlign:"right"}},
+        React.createElement("div",{style:{fontWeight:900,fontSize:isTablet?18:16,color:fillColor(pct,cat.color,t)}},fmtDec(spent)),
+        React.createElement("div",{style:{fontSize:11,fontWeight:700,color:over?t.over:near?t.near:t.textFaint}},
+          over?`+${fmtDec(spent-cat.budget)} over`:`${fmt(cat.budget-spent)} left`
+        )
+      )
+    ),
+    React.createElement(FillBar,{pct,color:cat.color,t})
+  );
+}
+
+const NAV_ITEMS=[
+  {id:"budget",  icon:"📊", label:"Budget"},
+  {id:"add",     icon:"＋", label:"Add Expense"},
+  {id:"history", icon:"🕒", label:"History"},
+  {id:"manage",  icon:"⚙",  label:"Manage"},
+];
+
+function App(){
+  const [categories, setCategories] = useState(()=>lsGet(LS_CATS,DEFAULT_CATEGORIES));
+  const [expenses,   setExpenses]   = useState(()=>lsGet(LS_EXPS,[]));
+  const [income,     setIncome]     = useState(()=>lsGet(LS_INCOME,{monthly:0}));
+  const [themeMode,  setThemeMode]  = useState(()=>lsGet(LS_THEME,"auto"));
+  const [tick,       setTick]       = useState(0);
+  const isDark = themeMode==="dark" ? true : themeMode==="light" ? false : !isDaytime();
+  const [duration,   setDuration]   = useState("Monthly");
+  const [period,     setPeriod]     = useState(()=>{
+    const d=new Date();
+    const week=Math.ceil((((new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()))
+      -new Date(Date.UTC(d.getFullYear(),0,1)))/86400000)+1)/7);
+    return{month:d.getMonth(),year:d.getFullYear(),week:week||1};
+  });
+  const [view,       setView]       = useState("budget");
+  const [winW,       setWinW]       = useState(window.innerWidth);
+  const [addForm,    setAddForm]    = useState({catId:"",amount:"",note:"",date:new Date().toISOString().split("T")[0]});
+  const [editCat,    setEditCat]    = useState(null);
+  const [newCat,     setNewCat]     = useState({name:"",emoji:"📦",budget:"",color:"#27AE82"});
+  const [showIncome, setShowIncome] = useState(false);
+  const [incEdit,    setIncEdit]    = useState("");
+  const [toast,      setToast]      = useState(null);
+  const [syncStatus, setSyncStatus] = useState(FIREBASE_CONFIG?"connecting":"local");
+  const scrollRef = useRef(null);
+  const fbRefs    = useRef({});
+  const t = getTheme(isDark);
+  const isTablet = winW >= 768;
+  const SIDEBAR_W = 260;
+
+  useEffect(()=>{const h=()=>setWinW(window.innerWidth);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[]);
+  useEffect(()=>{
+    if(!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(pos=>{_cachedLat=pos.coords.latitude;_cachedLng=pos.coords.longitude;_sunCache=null;setTick(n=>n+1);},()=>{});
+  },[]);
+  useEffect(()=>{const id=setInterval(()=>setTick(n=>n+1),60000);return()=>clearInterval(id);},[]);
+  useEffect(()=>{
+    if(!FIREBASE_CONFIG) return;
+    initFirebase().then(async ok=>{
+      if(!ok){setSyncStatus("error");return;}
+      const {ref,set,onValue}=await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
+      const catsRef=ref(firebaseDB,`${HOUSEHOLD_CODE}/categories`);
+      const expsRef=ref(firebaseDB,`${HOUSEHOLD_CODE}/expenses`);
+      const incRef =ref(firebaseDB,`${HOUSEHOLD_CODE}/income`);
+      fbRefs.current={set,catsRef,expsRef,incRef};
+      onValue(catsRef,snap=>{const v=snap.val();if(v){setCategories(v);lsSet(LS_CATS,v);}});
+      onValue(expsRef,snap=>{const v=snap.val();if(v){setExpenses(v);lsSet(LS_EXPS,v);}setSyncStatus("synced");});
+      onValue(incRef, snap=>{const v=snap.val();if(v){setIncome(v);lsSet(LS_INCOME,v);}});
+    });
+  },[]);
+  useEffect(()=>{if(scrollRef.current)scrollRef.current.scrollTo({top:0,behavior:"smooth"});},[view]);
+
+  function showToast(msg){setToast(msg);setTimeout(()=>setToast(null),2200);}
+  function saveCats(cats){setCategories(cats);lsSet(LS_CATS,cats);if(fbRefs.current.set)fbRefs.current.set(fbRefs.current.catsRef,cats).catch(console.error);}
+  function saveExps(exps){setExpenses(exps);lsSet(LS_EXPS,exps);if(fbRefs.current.set)fbRefs.current.set(fbRefs.current.expsRef,exps).catch(console.error);}
+  function saveIncome(inc){setIncome(inc);lsSet(LS_INCOME,inc);if(fbRefs.current.set&&fbRefs.current.incRef)fbRefs.current.set(fbRefs.current.incRef,inc).catch(console.error);}
+
+  function cycleTheme(){const next=themeMode==="auto"?"light":themeMode==="light"?"dark":"auto";setThemeMode(next);lsSet(LS_THEME,next);}
+  const themeIcon=themeMode==="auto"?"🌗":themeMode==="light"?"☀️":"🌙";
+  const themeLabel=themeMode==="auto"?"Auto":themeMode==="light"?"Light":"Dark";
+
+  function getWeekNumber(d){
+    const date=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+    const day=date.getUTCDay()||7;
+    date.setUTCDate(date.getUTCDate()+4-day);
+    const yearStart=new Date(Date.UTC(date.getUTCFullYear(),0,1));
+    return{week:Math.ceil((((date-yearStart)/86400000)+1)/7),year:date.getUTCFullYear()};
+  }
+  function getWeekRange(week,year){
+    const simple=new Date(year,0,1+((week-1)*7));
+    const dow=simple.getDay()||7;
+    const monday=new Date(simple);monday.setDate(simple.getDate()-dow+1);
+    const sunday=new Date(monday);sunday.setDate(monday.getDate()+6);
+    const f=d=>d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+    return f(monday)+" – "+f(sunday);
+  }
+  function totalWeeksInYear(year){return getWeekNumber(new Date(year,11,28)).week;}
+  function periodLabel(){
+    if(duration==="Monthly") return MONTHS[period.month]+" "+period.year;
+    if(duration==="Weekly")  return getWeekRange(period.week,period.year);
+    return ""+period.year;
+  }
+  function shiftPeriod(dir){
+    if(duration==="Monthly"){let m=period.month+dir,y=period.year;if(m<0){m=11;y--;}if(m>11){m=0;y++;}setPeriod(p=>({...p,month:m,year:y}));}
+    else if(duration==="Weekly"){let w=period.week+dir,y=period.year;if(w<1){y--;w=totalWeeksInYear(y);}else if(w>totalWeeksInYear(y)){y++;w=1;}setPeriod(p=>({...p,week:w,year:y}));}
+    else setPeriod(p=>({...p,year:p.year+dir}));
+  }
+  function inPeriod(exp){
+    const d=new Date(exp.date+"T12:00:00");
+    if(duration==="Monthly") return d.getMonth()===period.month&&d.getFullYear()===period.year;
+    if(duration==="Yearly")  return d.getFullYear()===period.year;
+    if(duration==="Weekly"){const {week:w,year:y}=getWeekNumber(d);return w===period.week&&y===period.year;}
+    return true;
+  }
+  const periodExpenses=expenses.filter(inPeriod);
+  function spentFor(catId){return periodExpenses.filter(e=>e.catId===catId).reduce((s,e)=>s+e.amount,0);}
+  const totalBudget=categories.reduce((s,c)=>s+c.budget,0);
+  const totalSpent=categories.reduce((s,c)=>s+spentFor(c.id),0);
+  const remaining=totalBudget-totalSpent;
+  const periodIncome=income.monthly>0?(duration==="Weekly"?income.monthly/4.33:duration==="Yearly"?income.monthly*12:income.monthly):0;
+  const actualSavings=periodIncome>0?periodIncome-totalSpent:null;
+  const budgetedSavings=periodIncome>0?periodIncome-totalBudget:null;
+  const savingsPct=periodIncome>0?Math.max(0,actualSavings/periodIncome):null;
+
+  function handleAddExpense(){
+    if(!addForm.catId||!addForm.amount||isNaN(parseFloat(addForm.amount))) return;
+    saveExps([{id:Date.now(),catId:addForm.catId,amount:parseFloat(addForm.amount),note:addForm.note.trim(),date:addForm.date},...expenses]);
+    setAddForm({catId:"",amount:"",note:"",date:new Date().toISOString().split("T")[0]});
+    showToast("Expense saved ✓");setView("budget");
+  }
+  function handleDeleteExp(id){saveExps(expenses.filter(e=>e.id!==id));showToast("Deleted");}
+  function handleSaveEditCat(){if(!editCat?.name.trim()||!editCat?.budget) return;saveCats(categories.map(c=>c.id===editCat.id?{...editCat,budget:parseFloat(editCat.budget)}:c));setEditCat(null);showToast("Saved ✓");}
+  function handleAddCat(){const name=newCat.name.trim(),budget=parseFloat(newCat.budget);if(!name||!budget||isNaN(budget)||budget<=0){showToast("Fill in name & budget");return;}saveCats([...categories,{id:"cat_"+Date.now(),name,emoji:newCat.emoji.trim()||"📦",color:newCat.color,budget}]);setNewCat({name:"",emoji:"📦",budget:"",color:"#27AE82"});showToast(`"${name}" added ✓`);}
+  function handleDeleteCat(id){saveCats(categories.filter(c=>c.id!==id));showToast("Removed");}
+  function moveCategory(index,dir){const ni=index+dir;if(ni<0||ni>=categories.length) return;const arr=[...categories],[item]=arr.splice(index,1);arr.splice(ni,0,item);saveCats(arr);}
+  function handleSaveIncome(){const v=parseFloat(incEdit)||0;saveIncome({monthly:v});setShowIncome(false);showToast(v>0?"Income saved ✓":"Income cleared");}
+  function exportData(){const blob=new Blob([JSON.stringify({categories,expenses,income},null,2)],{type:"application/json"});const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="spend-together-backup.json";a.click();URL.revokeObjectURL(url);showToast("Backup downloaded ✓");}
+  function importData(e){const file=e.target.files[0];if(!file) return;const reader=new FileReader();reader.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(d.categories)saveCats(d.categories);if(d.expenses)saveExps(d.expenses);if(d.income)saveIncome(d.income);showToast("Imported ✓");}catch{showToast("Import failed");}};reader.readAsText(file);e.target.value="";}
+
+  const syncPill={local:{color:"#D4AC0D",label:"💾 Local"},connecting:{color:"#2E86C1",label:"⟳ Connecting"},synced:{color:t.accent,label:"✦ Synced"},error:{color:t.over,label:"✕ Error"}}[syncStatus];
+
+  const IS={width:"100%",background:t.bgInput,border:`1px solid ${t.borderInput}`,borderRadius:12,padding:"12px 14px",color:t.text,fontSize:15,fontWeight:700,outline:"none",marginBottom:14,display:"block",fontFamily:"'Nunito',sans-serif"};
+
+  const css = `
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{background:${t.bg};height:100%;overflow:hidden}
+    @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+    @keyframes toastIn{0%{opacity:0;transform:translateY(16px) scale(0.96)}12%,88%{opacity:1;transform:none}100%{opacity:0}}
+    input[type=color]{-webkit-appearance:none}
+    input[type=color]::-webkit-color-swatch-wrapper{padding:2px}
+    input[type=color]::-webkit-color-swatch{border:none;border-radius:6px}
+    .scroll-area{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+    .scroll-area::-webkit-scrollbar{width:3px}
+    .scroll-area::-webkit-scrollbar-thumb{background:${t.borderCard};border-radius:99px}
+    .cat-card{transition:transform 0.15s ease}
+    .cat-card:active{transform:scale(0.984)}
+    .tap-btn{transition:opacity 0.12s,transform 0.12s}
+    .tap-btn:active{opacity:0.7;transform:scale(0.95)}
+    .nav-btn{transition:color 0.2s,background 0.2s}
+    .cat-scroll::-webkit-scrollbar{display:none}
+  `;
+
+  // ── Render helpers (inline JSX via React.createElement) ──
+  // For brevity we inline the full render using a JSX-compatible approach
+  // by embedding a script that uses Babel standalone to transpile JSX
+
+  const toastEl = toast ? React.createElement("div",{style:{position:"fixed",bottom:80,left:"50%",transform:"translateX(-50%)",background:t.accent,color:t.accentText,padding:"10px 22px",borderRadius:99,fontSize:14,fontWeight:800,zIndex:300,whiteSpace:"nowrap",animation:"toastIn 2.2s forwards",boxShadow:`0 4px 20px ${t.accent}66`,pointerEvents:"none"}},toast) : null;
+
+  // Period nav bar
+  const periodNav = React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",background:t.bgPill,borderRadius:12,padding:"8px 6px"}},
+    React.createElement("button",{className:"tap-btn",onClick:()=>shiftPeriod(-1),style:{background:"none",border:"none",color:t.textMuted,fontSize:22,cursor:"pointer",padding:"0 10px",lineHeight:1}},"‹"),
+    React.createElement("span",{style:{fontWeight:800,fontSize:14,color:t.text}},periodLabel()),
+    React.createElement("button",{className:"tap-btn",onClick:()=>shiftPeriod(1),style:{background:"none",border:"none",color:t.textMuted,fontSize:22,cursor:"pointer",padding:"0 10px",lineHeight:1}},"›")
+  );
+
+  const durationPills = (compact) => React.createElement("div",{style:{display:"flex",background:t.bgPill,borderRadius:20,padding:3,gap:2}},
+    DURATIONS.map(d=>React.createElement("button",{key:d,className:"tap-btn",onClick:()=>setDuration(d),style:{border:"none",borderRadius:17,padding:compact?"5px 10px":"5px 0",fontSize:11,fontWeight:800,cursor:"pointer",fontFamily:"inherit",background:duration===d?t.bgPillActive:"transparent",color:duration===d?t.text:t.textMuted,flex:compact?undefined:1}},compact?d.slice(0,2):d))
+  );
+
+  // ── Budget Panel ──
+  function BudgetView(){
+    return React.createElement("div",{style:{padding:isTablet?"24px":"8px 16px"}},
+      // Income bar
+      React.createElement("div",{className:"tap-btn",onClick:()=>setShowIncome(v=>!v),style:{display:"flex",alignItems:"center",justifyContent:"space-between",background:t.bgCard,borderRadius:16,padding:"12px 18px",marginBottom:10,border:`1px solid ${t.borderCard}`,boxShadow:t.shadow,cursor:"pointer"}},
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
+          React.createElement("span",{style:{fontSize:20}},"💰"),
+          React.createElement("div",null,
+            React.createElement("div",{style:{fontSize:11,color:t.textMuted,fontWeight:700,textTransform:"uppercase",letterSpacing:1}},"Monthly Income"),
+            React.createElement("div",{style:{fontSize:16,fontWeight:900,color:periodIncome>0?t.accent:t.textFaint}},periodIncome>0?fmtDec(income.monthly):"Tap to set income")
+          )
+        ),
+        React.createElement("span",{style:{fontSize:13,color:t.textMuted,fontWeight:700}},showIncome?"▲":"▼")
+      ),
+      // Income editor
+      showIncome && React.createElement("div",{style:{background:t.bgCard,borderRadius:16,padding:18,marginBottom:10,border:`1px solid ${t.accent}44`,animation:"slideUp 0.25s ease"}},
+        React.createElement(Lbl,{t},"Combined Monthly Take-Home ($)"),
+        React.createElement("input",{type:"number",inputMode:"decimal",placeholder:"e.g. 5000",value:incEdit,onChange:e=>setIncEdit(e.target.value),autoFocus:true,style:{...IS,fontSize:24,fontWeight:900,textAlign:"center",color:t.accent,letterSpacing:-0.5,marginBottom:10}}),
+        React.createElement("button",{className:"tap-btn",onClick:handleSaveIncome,style:{width:"100%",padding:14,background:t.accentGrad,color:t.accentText,border:"none",borderRadius:14,fontSize:15,fontFamily:"'Nunito',sans-serif",fontWeight:900,cursor:"pointer",marginBottom:8}},"Save Income"),
+        React.createElement("button",{className:"tap-btn",onClick:()=>setShowIncome(false),style:{width:"100%",padding:12,background:t.bgPill,border:`1px solid ${t.borderCard}`,borderRadius:14,fontSize:14,fontFamily:"'Nunito',sans-serif",cursor:"pointer",color:t.textMuted}},"Cancel")
+      ),
+      // Savings cards
+      periodIncome>0 && React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}},
+        React.createElement("div",{style:{background:t.bgCard,borderRadius:16,padding:"14px 16px",border:`1px solid ${actualSavings>=0?t.accent+"33":t.over+"33"}`,boxShadow:t.shadow}},
+          React.createElement("div",{style:{fontSize:10,color:t.textMuted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}},"Actual Savings"),
+          React.createElement("div",{style:{fontSize:isTablet?20:18,fontWeight:900,color:actualSavings>=0?t.accent:t.over}},fmtDec(Math.abs(actualSavings))),
+          React.createElement("div",{style:{fontSize:11,color:actualSavings>=0?t.accent:t.over,fontWeight:700,marginTop:2}},actualSavings>=0?Math.round(savingsPct*100)+"% of income":"overspent"),
+          React.createElement("div",{style:{height:6,background:t.fillBg,borderRadius:99,marginTop:8,overflow:"hidden"}},
+            React.createElement("div",{style:{height:"100%",width:Math.min(savingsPct*100,100)+"%",background:actualSavings>=0?t.accent:t.over,borderRadius:99,transition:"width 0.7s"}})
+          )
+        ),
+        React.createElement("div",{style:{background:t.bgCard,borderRadius:16,padding:"14px 16px",border:`1px solid ${t.borderCard}`,boxShadow:t.shadow}},
+          React.createElement("div",{style:{fontSize:10,color:t.textMuted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}},"Budgeted Savings"),
+          React.createElement("div",{style:{fontSize:isTablet?20:18,fontWeight:900,color:budgetedSavings>=0?t.remaining:t.over}},fmtDec(Math.abs(budgetedSavings))),
+          React.createElement("div",{style:{fontSize:11,color:t.textMuted,fontWeight:700,marginTop:2}},budgetedSavings>=0?Math.round((budgetedSavings/periodIncome)*100)+"% planned":"budget > income"),
+          React.createElement("div",{style:{height:6,background:t.fillBg,borderRadius:99,marginTop:8,overflow:"hidden"}},
+            React.createElement("div",{style:{height:"100%",width:Math.min(Math.max((budgetedSavings/periodIncome)*100,0),100)+"%",background:budgetedSavings>=0?t.remaining:t.over,borderRadius:99,transition:"width 0.7s"}})
+          )
+        )
+      ),
+      // Summary ring
+      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:isTablet?24:16,background:t.bgSummary,borderRadius:isTablet?24:20,padding:isTablet?"24px 28px":"16px 18px",marginBottom:isTablet?20:12,border:`1px solid ${t.borderCard}`,boxShadow:t.shadow}},
+        React.createElement(SummaryRing,{spent:totalSpent,total:periodIncome||totalBudget,t,size:isTablet?150:128}),
+        React.createElement("div",{style:{flex:1}},
+          periodIncome>0&&React.createElement(StatRow,{label:"Income",value:fmtDec(periodIncome),color:t.accent,t}),
+          React.createElement(StatRow,{label:"Budgeted",value:fmt(totalBudget),color:t.textSub,t}),
+          React.createElement(StatRow,{label:"Spent",value:fmtDec(totalSpent),color:totalSpent>totalBudget?t.over:t.accent,big:true,t}),
+          React.createElement(StatRow,{label:"Remaining",value:fmtDec(remaining),color:remaining<0?t.over:t.remaining,t}),
+          React.createElement(StatRow,{label:"Entries",value:periodExpenses.length+" items",color:t.textFaint,t})
+        )
+      ),
+      // Category grid
+      React.createElement("div",{style:{display:"grid",gridTemplateColumns:isTablet?"1fr 1fr":"1fr",gap:isTablet?14:10}},
+        categories.map((cat,i)=>React.createElement("div",{key:cat.id,style:{animation:"slideUp 0.35s ease both",animationDelay:i*0.03+"s"}},
+          React.createElement(CatCard,{cat,spent:spentFor(cat.id),t,isTablet,onClick:()=>{setAddForm(f=>({...f,catId:cat.id}));setView("add");}})
+        ))
+      )
+    );
+  }
+
+  // ── Add Panel ──
+  function AddView(){
+    const selCat=categories.find(c=>c.id===addForm.catId);
+    const canSave=addForm.catId&&addForm.amount&&!isNaN(parseFloat(addForm.amount));
+    const inputBase={width:"100%",background:t.bgInput,border:`1px solid ${t.borderInput}`,borderRadius:12,padding:"11px 14px",color:t.text,fontWeight:700,outline:"none",display:"block",fontFamily:"'Nunito',sans-serif"};
+    if(isTablet){
+      return React.createElement("div",{style:{padding:"24px"}},
+        React.createElement("div",{style:{background:t.bgCard,borderRadius:24,padding:32,border:`1px solid ${t.borderCard}`,boxShadow:t.shadow,animation:"slideUp 0.3s ease",maxWidth:560,margin:"0 auto"}},
+          React.createElement("h2",{style:{fontSize:24,fontWeight:900,marginBottom:24,color:t.text}},"Add Expense"),
+          React.createElement(Lbl,{t},"Amount ($)"),
+          React.createElement("input",{type:"number",inputMode:"decimal",placeholder:"0.00",value:addForm.amount,onChange:e=>setAddForm(f=>({...f,amount:e.target.value})),autoFocus:true,style:{...IS,fontSize:40,fontWeight:900,textAlign:"center",color:t.accent,letterSpacing:-1}}),
+          React.createElement(Lbl,{t},"Category"),
+          React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:8,marginBottom:18}},
+            categories.map(cat=>React.createElement("button",{key:cat.id,className:"tap-btn",onClick:()=>setAddForm(f=>({...f,catId:cat.id})),style:{border:`2px solid ${addForm.catId===cat.id?cat.color:t.borderCard}`,background:addForm.catId===cat.id?cat.color+"22":t.bgPill,borderRadius:20,padding:"7px 14px",cursor:"pointer",fontSize:13,fontWeight:800,fontFamily:"inherit",color:addForm.catId===cat.id?cat.color:t.textMuted}},cat.emoji+" "+cat.name))
+          ),
+          React.createElement(Lbl,{t},"Note (optional)"),
+          React.createElement("input",{type:"text",placeholder:"What was this for?",value:addForm.note,onChange:e=>setAddForm(f=>({...f,note:e.target.value})),style:IS}),
+          React.createElement(Lbl,{t},"Date"),
+          React.createElement("input",{type:"date",value:addForm.date,onChange:e=>setAddForm(f=>({...f,date:e.target.value})),style:{...IS,marginBottom:28,colorScheme:isDark?"dark":"light"}}),
+          React.createElement("button",{className:"tap-btn",onClick:handleAddExpense,disabled:!canSave,style:{width:"100%",padding:18,background:t.accentGrad,color:t.accentText,border:"none",borderRadius:14,fontSize:16,fontFamily:"'Nunito',sans-serif",fontWeight:900,cursor:"pointer",opacity:canSave?1:0.4}},"Save Expense ✓")
+        )
+      );
+    }
+    return React.createElement("div",{style:{padding:"10px 16px 24px",animation:"slideUp 0.25s ease"}},
+      React.createElement("div",{style:{background:t.bgCard,borderRadius:18,padding:"14px 18px",marginBottom:10,border:`1px solid ${selCat?selCat.color+"44":t.borderCard}`,boxShadow:t.shadow}},
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12}},
+          selCat&&React.createElement("div",{style:{width:42,height:42,borderRadius:12,background:selCat.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}},selCat.emoji),
+          React.createElement("div",{style:{flex:1}},
+            React.createElement("div",{style:{fontSize:10,color:t.textMuted,fontWeight:700,textTransform:"uppercase",letterSpacing:1.5,marginBottom:4}},selCat?selCat.name:"Select a category below"),
+            React.createElement("input",{type:"number",inputMode:"decimal",placeholder:"0.00",value:addForm.amount,onChange:e=>setAddForm(f=>({...f,amount:e.target.value})),autoFocus:true,style:{...inputBase,fontSize:34,fontWeight:900,color:t.accent,letterSpacing:-1,padding:0,background:"transparent",border:"none",width:"100%"}})
+          )
+        )
+      ),
+      React.createElement("div",{style:{marginBottom:10}},
+        React.createElement("div",{style:{fontSize:10,color:t.textMuted,fontWeight:700,textTransform:"uppercase",letterSpacing:1.5,marginBottom:6,paddingLeft:2}},"Category"),
+        React.createElement("div",{style:{display:"flex",gap:8,overflowX:"auto",paddingBottom:6,WebkitOverflowScrolling:"touch",scrollbarWidth:"none"}},
+          categories.map(cat=>{const sel=addForm.catId===cat.id;return React.createElement("button",{key:cat.id,className:"tap-btn cat-scroll",onClick:()=>setAddForm(f=>({...f,catId:cat.id})),style:{flexShrink:0,display:"flex",alignItems:"center",gap:6,border:`2px solid ${sel?cat.color:t.borderCard}`,background:sel?cat.color+"22":t.bgCard,borderRadius:14,padding:"8px 12px",cursor:"pointer",fontFamily:"inherit",color:sel?cat.color:t.textMuted,fontWeight:800,fontSize:13}},React.createElement("span",{style:{fontSize:17}},cat.emoji),React.createElement("span",null,cat.name));})
+        )
+      ),
+      React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr auto",gap:10,marginBottom:14}},
+        React.createElement("div",null,
+          React.createElement("div",{style:{fontSize:10,color:t.textMuted,fontWeight:700,textTransform:"uppercase",letterSpacing:1.5,marginBottom:6}},"Note"),
+          React.createElement("input",{type:"text",placeholder:"What was this for?",value:addForm.note,onChange:e=>setAddForm(f=>({...f,note:e.target.value})),style:{...inputBase,fontSize:14}})
+        ),
+        React.createElement("div",null,
+          React.createElement("div",{style:{fontSize:10,color:t.textMuted,fontWeight:700,textTransform:"uppercase",letterSpacing:1.5,marginBottom:6}},"Date"),
+          React.createElement("input",{type:"date",value:addForm.date,onChange:e=>setAddForm(f=>({...f,date:e.target.value})),style:{...inputBase,fontSize:13,colorScheme:isDark?"dark":"light",width:"auto"}})
+        )
+      ),
+      React.createElement("button",{className:"tap-btn",onClick:handleAddExpense,disabled:!canSave,style:{width:"100%",padding:16,background:t.accentGrad,color:t.accentText,border:"none",borderRadius:14,fontSize:16,fontFamily:"'Nunito',sans-serif",fontWeight:900,cursor:"pointer",marginBottom:10,opacity:canSave?1:0.4}},"Save Expense ✓"),
+      React.createElement("button",{className:"tap-btn",onClick:()=>setView("budget"),style:{width:"100%",padding:13,background:t.bgPill,border:`1px solid ${t.borderCard}`,borderRadius:14,fontSize:14,fontFamily:"'Nunito',sans-serif",cursor:"pointer",color:t.textMuted}},"Cancel")
+    );
+  }
+
+  // ── History Panel ──
+  function HistoryView(){
+    return React.createElement("div",{style:{padding:isTablet?"24px":"8px 16px",animation:"slideUp 0.3s ease"}},
+      periodExpenses.length===0
+        ? React.createElement("div",{style:{textAlign:"center",padding:"80px 0",color:t.textMuted,fontSize:14}},React.createElement("div",{style:{fontSize:48,marginBottom:16}},"🌿"),"No expenses this period")
+        : React.createElement("div",{style:{display:"grid",gridTemplateColumns:isTablet?"1fr 1fr":"1fr",gap:isTablet?10:8}},
+            periodExpenses.map(exp=>{
+              const cat=categories.find(c=>c.id===exp.catId);
+              return React.createElement("div",{key:exp.id,style:{background:t.bgCard,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",gap:12,border:`1px solid ${t.borderCard}`,boxShadow:t.shadow}},
+                React.createElement("div",{style:{width:isTablet?42:36,height:isTablet?42:36,borderRadius:10,background:(cat?.color||"#888")+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:isTablet?20:18,flexShrink:0}},cat?.emoji||"📦"),
+                React.createElement("div",{style:{flex:1,minWidth:0}},
+                  React.createElement("div",{style:{fontWeight:800,fontSize:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:t.text}},exp.note||cat?.name||"Expense"),
+                  React.createElement("div",{style:{fontSize:11,color:t.textMuted,marginTop:2}},(cat?.name||"")+" · "+new Date(exp.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}))
+                ),
+                React.createElement("span",{style:{fontWeight:900,fontSize:15,color:cat?.color||t.accent,flexShrink:0}},fmtDec(exp.amount)),
+                React.createElement("button",{className:"tap-btn",onClick:()=>handleDeleteExp(exp.id),style:{background:t.over+"18",border:"none",borderRadius:8,padding:"5px 9px",color:t.over,cursor:"pointer",fontSize:13,flexShrink:0}},"✕")
+              );
+            })
+          )
+    );
+  }
+
+  // ── Manage Panel ──
+  function ManageView(){
+    return React.createElement("div",{style:{padding:isTablet?"24px":"8px 16px",animation:"slideUp 0.3s ease"}},
+      React.createElement("div",{style:{maxWidth:isTablet?680:9999,margin:isTablet?"0 auto":0}},
+        React.createElement("div",{style:{fontSize:12,color:t.textMuted,marginBottom:12}},"Use ↑↓ to reorder · tap Edit to change"),
+        React.createElement("div",{style:{display:"grid",gridTemplateColumns:isTablet?"1fr 1fr":"1fr",gap:isTablet?10:8,marginBottom:16}},
+          categories.map((cat,i)=>React.createElement("div",{key:cat.id,style:{background:t.bgCard,borderRadius:16,padding:14,border:`1px solid ${t.borderCard}`,boxShadow:t.shadow}},
+            editCat?.id===cat.id
+              ? React.createElement("div",null,
+                  React.createElement("div",{style:{display:"flex",gap:10,marginBottom:10}},
+                    React.createElement("input",{value:editCat.emoji,onChange:e=>setEditCat(f=>({...f,emoji:e.target.value})),style:{...IS,width:52,textAlign:"center",fontSize:22,padding:8,marginBottom:0},maxLength:2}),
+                    React.createElement("input",{value:editCat.name,onChange:e=>setEditCat(f=>({...f,name:e.target.value})),style:{...IS,flex:1,marginBottom:0},placeholder:"Name"})
+                  ),
+                  React.createElement("div",{style:{display:"flex",gap:10,marginBottom:12}},
+                    React.createElement("div",{style:{flex:1}},React.createElement(Lbl,{t},"Budget ($)"),React.createElement("input",{type:"number",value:editCat.budget,onChange:e=>setEditCat(f=>({...f,budget:e.target.value})),style:{...IS,marginBottom:0}})),
+                    React.createElement("div",{style:{flex:"0 0 72px"}},React.createElement(Lbl,{t},"Color"),React.createElement("input",{type:"color",value:editCat.color,onChange:e=>setEditCat(f=>({...f,color:e.target.value})),style:{...IS,padding:4,height:46,cursor:"pointer",marginBottom:0}}))
+                  ),
+                  React.createElement("div",{style:{display:"flex",gap:8}},
+                    React.createElement("button",{className:"tap-btn",onClick:handleSaveEditCat,style:{flex:1,padding:11,background:t.accentGrad,color:t.accentText,border:"none",borderRadius:14,fontSize:14,fontFamily:"'Nunito',sans-serif",fontWeight:900,cursor:"pointer"}},"Save ✓"),
+                    React.createElement("button",{className:"tap-btn",onClick:()=>setEditCat(null),style:{flex:1,padding:11,background:t.bgPill,border:`1px solid ${t.borderCard}`,borderRadius:14,fontSize:14,fontFamily:"'Nunito',sans-serif",cursor:"pointer",color:t.textMuted}},"Cancel")
+                  )
+                )
+              : React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
+                  React.createElement(MoveBtn,{index:i,total:categories.length,onMove:moveCategory,t}),
+                  React.createElement("div",{style:{width:36,height:36,borderRadius:10,background:cat.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}},cat.emoji),
+                  React.createElement("div",{style:{flex:1,minWidth:0}},
+                    React.createElement("div",{style:{fontWeight:800,fontSize:14,color:t.text}},cat.name),
+                    React.createElement("div",{style:{fontSize:12,color:t.textMuted}},fmt(cat.budget))
+                  ),
+                  React.createElement("button",{className:"tap-btn",onClick:()=>setEditCat({...cat}),style:{background:t.bgPill,border:`1px solid ${t.borderCard}`,borderRadius:8,padding:"6px 12px",color:t.textSub,cursor:"pointer",fontSize:12,fontFamily:"inherit",fontWeight:800,flexShrink:0}},"Edit"),
+                  React.createElement("button",{className:"tap-btn",onClick:()=>handleDeleteCat(cat.id),style:{background:t.over+"18",border:"none",borderRadius:8,padding:"6px 10px",color:t.over,cursor:"pointer",fontSize:14,flexShrink:0}},"✕")
+                )
+          ))
+        ),
+        React.createElement("div",{style:{background:t.bgCard,borderRadius:16,padding:18,border:`1px dashed ${t.borderDash}`,marginBottom:14,boxShadow:t.shadow}},
+          React.createElement("h3",{style:{fontSize:13,fontWeight:800,color:t.textMuted,letterSpacing:1,textTransform:"uppercase",marginBottom:14}},"＋ New Category"),
+          React.createElement("div",{style:{display:"flex",gap:10,marginBottom:12}},
+            React.createElement("div",{style:{flexShrink:0}},React.createElement(Lbl,{t},"Emoji"),React.createElement("input",{value:newCat.emoji,onChange:e=>setNewCat(f=>({...f,emoji:e.target.value})),style:{...IS,width:56,textAlign:"center",fontSize:22,padding:8,marginBottom:0},maxLength:2})),
+            React.createElement("div",{style:{flex:1}},React.createElement(Lbl,{t},"Name"),React.createElement("input",{value:newCat.name,onChange:e=>setNewCat(f=>({...f,name:e.target.value})),style:{...IS,marginBottom:0},placeholder:"e.g. Rent"}))
+          ),
+          React.createElement("div",{style:{display:"flex",gap:10,marginBottom:14}},
+            React.createElement("div",{style:{flex:1}},React.createElement(Lbl,{t},"Budget ($)"),React.createElement("input",{type:"number",inputMode:"decimal",value:newCat.budget,onChange:e=>setNewCat(f=>({...f,budget:e.target.value})),style:{...IS,marginBottom:0},placeholder:"e.g. 500"})),
+            React.createElement("div",{style:{flex:"0 0 72px"}},React.createElement(Lbl,{t},"Color"),React.createElement("input",{type:"color",value:newCat.color,onChange:e=>setNewCat(f=>({...f,color:e.target.value})),style:{...IS,padding:4,height:46,cursor:"pointer",marginBottom:0}}))
+          ),
+          React.createElement("button",{className:"tap-btn",onClick:handleAddCat,style:{width:"100%",padding:14,background:t.accentGrad,color:t.accentText,border:"none",borderRadius:14,fontSize:15,fontFamily:"'Nunito',sans-serif",fontWeight:900,cursor:"pointer"}},"Add Category")
+        ),
+        React.createElement("div",{style:{background:t.bgCard,borderRadius:16,padding:18,border:`1px solid ${t.borderCard}`,boxShadow:t.shadow}},
+          React.createElement("h3",{style:{fontSize:13,fontWeight:800,color:t.textMuted,letterSpacing:1,textTransform:"uppercase",marginBottom:10}},"Backup & Restore"),
+          React.createElement("div",{style:{display:isTablet?"flex":"block",gap:10}},
+            React.createElement("button",{className:"tap-btn",onClick:exportData,style:{width:"100%",padding:14,background:t.accentGrad,color:t.accentText,border:"none",borderRadius:14,fontSize:14,fontFamily:"'Nunito',sans-serif",fontWeight:900,cursor:"pointer",marginBottom:isTablet?0:8}},"⬇ Download Backup"),
+            React.createElement("label",{className:"tap-btn",style:{width:"100%",padding:13,background:t.bgPill,border:`1px solid ${t.borderCard}`,borderRadius:14,fontSize:14,fontFamily:"'Nunito',sans-serif",cursor:"pointer",color:t.textMuted,display:"block",textAlign:"center"}},
+              "⬆ Import Backup",
+              React.createElement("input",{type:"file",accept:".json",onChange:importData,style:{display:"none"}})
+            )
+          )
+        )
+      )
+    );
+  }
+
+  const mainContent = view==="budget"?React.createElement(BudgetView,null):view==="add"?React.createElement(AddView,null):view==="history"?React.createElement(HistoryView,null):React.createElement(ManageView,null);
+
+  if(isTablet){
+    return React.createElement(React.Fragment,null,
+      React.createElement("link",{href:"https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700&display=swap",rel:"stylesheet"}),
+      React.createElement("style",null,css),
+      React.createElement("div",{style:{display:"flex",height:"100dvh",background:t.bg,fontFamily:"'Nunito',sans-serif",color:t.text}},
+        toastEl,
+        // Sidebar
+        React.createElement("div",{style:{width:SIDEBAR_W,flexShrink:0,background:t.sidebarBg,borderRight:`1px solid ${t.sidebarBorder}`,display:"flex",flexDirection:"column",padding:"32px 0 24px"}},
+          React.createElement("div",{style:{padding:"0 24px 28px"}},
+            React.createElement("div",{style:{fontSize:10,color:t.textMuted,letterSpacing:3,textTransform:"uppercase",marginBottom:4}},"Our Budget"),
+            React.createElement("div",{style:{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:t.text,lineHeight:1.2}},"Spend",React.createElement("br"),"Together"),
+            React.createElement("div",{style:{marginTop:10,fontSize:11,color:syncPill.color,fontWeight:800,background:syncPill.color+"18",borderRadius:99,padding:"3px 10px",display:"inline-block"}},syncPill.label)
+          ),
+          React.createElement("div",{style:{padding:"0 24px 24px",borderBottom:`1px solid ${t.sidebarBorder}`}},
+            React.createElement(SummaryRing,{spent:totalSpent,total:periodIncome||totalBudget,t,size:210}),
+            React.createElement("div",{style:{marginTop:14}},
+              periodIncome>0&&React.createElement(StatRow,{label:"Income",value:fmtDec(periodIncome),color:t.accent,t}),
+              React.createElement(StatRow,{label:"Budgeted",value:fmt(totalBudget),color:t.textSub,t}),
+              React.createElement(StatRow,{label:"Spent",value:fmtDec(totalSpent),color:totalSpent>totalBudget?t.over:t.accent,big:true,t}),
+              React.createElement(StatRow,{label:"Remaining",value:fmtDec(remaining),color:remaining<0?t.over:t.remaining,t}),
+              actualSavings!==null&&React.createElement(StatRow,{label:"Savings",value:fmtDec(actualSavings),color:actualSavings>=0?t.accent:t.over,t})
+            )
+          ),
+          React.createElement("div",{style:{padding:"16px 24px",borderBottom:`1px solid ${t.sidebarBorder}`}},
+            durationPills(false),
+            React.createElement("div",{style:{marginTop:10}},periodNav)
+          ),
+          React.createElement("div",{style:{flex:1,padding:"12px 12px 0"}},
+            NAV_ITEMS.map(item=>React.createElement("button",{key:item.id,className:"nav-btn",onClick:()=>setView(item.id),style:{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"12px 14px",borderRadius:12,border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:14,fontWeight:800,textAlign:"left",background:view===item.id?t.accent+"18":"transparent",color:view===item.id?t.accent:t.textMuted,marginBottom:2}},
+              React.createElement("span",{style:{fontSize:18,width:24,textAlign:"center"}},item.icon),item.label
+            ))
+          ),
+          React.createElement("div",{style:{padding:"0 12px"}},
+            React.createElement("button",{className:"tap-btn",onClick:cycleTheme,style:{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 14px",borderRadius:12,border:`1px solid ${t.borderCard}`,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:800,color:t.textSub,background:t.bgPill}},
+              React.createElement("span",{style:{fontSize:16}},themeIcon)," "+themeLabel+" Theme"
+            )
+          )
+        ),
+        React.createElement("div",{ref:scrollRef,className:"scroll-area",style:{flex:1,minWidth:0,background:t.bg}},mainContent)
+      )
+    );
+  }
+
+  // Phone layout
+  return React.createElement(React.Fragment,null,
+    React.createElement("link",{href:"https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700&display=swap",rel:"stylesheet"}),
+    React.createElement("style",null,css),
+    React.createElement("div",{style:{fontFamily:"'Nunito',sans-serif",background:t.bg,height:"100dvh",maxWidth:430,margin:"0 auto",color:t.text,display:"flex",flexDirection:"column",overflow:"hidden"}},
+      toastEl,
+      // Header
+      React.createElement("div",{style:{flexShrink:0,padding:"22px 20px 14px",background:t.bgHeader,zIndex:10,boxShadow:isDark?"none":t.shadow}},
+        React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}},
+          React.createElement("div",null,
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:3}},
+              React.createElement("div",{style:{fontSize:10,color:t.textMuted,letterSpacing:3,textTransform:"uppercase"}},"Our Budget"),
+              React.createElement("div",{style:{fontSize:10,color:syncPill.color,fontWeight:800,background:syncPill.color+"18",borderRadius:99,padding:"2px 8px"}},syncPill.label)
+            ),
+            React.createElement("div",{style:{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,letterSpacing:-0.5,color:t.text}},"Spend Together")
+          ),
+          React.createElement("div",{style:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}},
+            React.createElement("button",{className:"tap-btn",onClick:cycleTheme,style:{display:"flex",alignItems:"center",gap:5,background:t.bgPill,border:`1px solid ${t.borderCard}`,borderRadius:20,padding:"5px 12px",cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:800,color:t.textSub}},themeIcon+" "+themeLabel),
+            durationPills(true)
+          )
+        ),
+        periodNav
+      ),
+      React.createElement("div",{ref:scrollRef,className:"scroll-area",style:{flex:1,minHeight:0,paddingBottom:16}},mainContent),
+      // Bottom nav
+      React.createElement("div",{style:{flexShrink:0,background:t.bgNav,borderTop:`1px solid ${t.borderNav}`,display:"flex",boxShadow:isDark?"none":"0 -2px 12px rgba(0,0,0,0.06)"}},
+        NAV_ITEMS.map(tab=>React.createElement("button",{key:tab.id,className:"nav-btn",onClick:()=>setView(tab.id),style:{flex:1,border:"none",background:"none",padding:"12px 0 10px",cursor:"pointer",color:view===tab.id?t.accent:t.textNav,fontFamily:"inherit"}},
+          React.createElement("div",{style:{fontSize:tab.id==="add"?22:18}},tab.icon),
+          React.createElement("div",{style:{fontSize:10,marginTop:3,fontWeight:view===tab.id?900:600}},tab.label)
+        ))
+      )
+    )
+  );
+}
+
+createRoot(document.getElementById("root")).render(React.createElement(App));
+```
+
+  </script>
+</body>
+</html>

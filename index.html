@@ -17,10 +17,9 @@ var DCATS = [
   {id:"transport", name:"Transport", color:"#2E86C1", budget:200}
 ];
 
-function lsG(k,f){try{var v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}}
-
 function App() {
-var s1 = React.useState(lsG(“cats”, DCATS));
+// NO localStorage - just use DCATS directly
+var s1 = React.useState(DCATS);
 var cats = s1[0];
 
 return React.createElement(‘div’, null,

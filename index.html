@@ -16,18 +16,11 @@
 </head>
 <body>
   <div id="root"></div>
-  <script type="importmap">
-  {
-    "imports": {
-      "react": "https://esm.sh/react@18.2.0",
-      "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-      "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime"
-    }
-  }
-  </script>
-  <script type="module">
-    import React, { useState, useEffect, useRef } from "react";
-    import { createRoot } from "react-dom/client";
+  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script>
+    const { useState, useEffect, useRef } = React;
+    function createRoot(el){ return ReactDOM.createRoot(el); }
 
 ```
 // ─────────────────────────────────────────────────────────────────────────────

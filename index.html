@@ -15,16 +15,13 @@ function App() {
   var s = React.useState("budget");
   var view = s[0], setView = s[1];
 
-var cats = [“Groceries”, “Dining”, “Transport”];
-
+// NO map - just hardcoded items
 return React.createElement(‘div’, null,
 React.createElement(‘h1’, {style:{color:”#52D9A4”}}, “Spend Together”),
 React.createElement(‘p’, null, “View: “ + view),
-React.createElement(‘div’, null,
-cats.map(function(cat) {
-return React.createElement(‘div’, {key:cat, style:{padding:10, marginBottom:8, background:“rgba(255,255,255,0.05)”, borderRadius:8}}, cat);
-})
-),
+React.createElement(‘div’, {style:{padding:10, marginBottom:8, background:“rgba(255,255,255,0.05)”, borderRadius:8}}, “Groceries”),
+React.createElement(‘div’, {style:{padding:10, marginBottom:8, background:“rgba(255,255,255,0.05)”, borderRadius:8}}, “Dining”),
+React.createElement(‘div’, {style:{padding:10, marginBottom:8, background:“rgba(255,255,255,0.05)”, borderRadius:8}}, “Transport”),
 React.createElement(‘button’, {
 onClick: function(){ setView(“add”); },
 style:{marginTop:16, padding:“10px 20px”, background:”#52D9A4”, color:“black”, border:“none”, borderRadius:8, cursor:“pointer”}

@@ -20,11 +20,6 @@ function App() {
   var view = s3[0], setView = s3[1];
   var s4 = React.useState({monthly:0});
   var income = s4[0];
-  var ref1 = React.useRef({});
-
-React.useEffect(function(){
-ref1.current.loaded = true;
-}, []);
 
 return React.createElement(‘div’, null,
 React.createElement(‘p’, null, “Count: “ + count),

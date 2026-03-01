@@ -14,24 +14,29 @@
 function App() {
   var s1 = React.useState(0);
   var count = s1[0], setCount = s1[1];
-  var s2 = React.useState([
-    {id:"a",name:"One",color:"#27AE82",budget:600},
-    {id:"b",name:"Two",color:"#E8703A",budget:300},
-    {id:"c",name:"Three",color:"#2E86C1",budget:200},
-    {id:"d",name:"Four",color:"#D4AC0D",budget:250},
-    {id:"e",name:"Five",color:"#8E44AD",budget:150},
-    {id:"f",name:"Six",color:"#C0392B",budget:400},
-    {id:"g",name:"Seven",color:"#16A085",budget:150},
-    {id:"h",name:"Eight",color:"#1E8449",budget:500}
-  ]);
+  var s2 = React.useState([{id:"a",name:"One"},{id:"b",name:"Two"}]);
   var cats = s2[0];
-  return React.createElement('div', null,
-    React.createElement('p', null, "Count: " + count),
-    React.createElement('p', null, "Cats: " + cats.length + " - " + cats[0].name),
-    React.createElement('button', {onClick: function(){ setCount(count+1); }, style:{padding:10, background:"#52D9A4", border:"none", borderRadius:8, cursor:"pointer"}}, "Tap +1")
-  );
+  var s3 = React.useState("budget");
+  var view = s3[0], setView = s3[1];
+  var s4 = React.useState({monthly:0});
+  var income = s4[0];
+  var ref1 = React.useRef({});
+
+React.useEffect(function(){
+ref1.current.loaded = true;
+}, []);
+
+return React.createElement(‘div’, null,
+React.createElement(‘p’, null, “Count: “ + count),
+React.createElement(‘p’, null, “Cats: “ + cats.length),
+React.createElement(‘p’, null, “View: “ + view),
+React.createElement(‘p’, null, “Income: “ + income.monthly),
+React.createElement(‘button’, {onClick: function(){ setCount(count+1); }, style:{padding:10, background:”#52D9A4”, border:“none”, borderRadius:8, cursor:“pointer”, marginRight:8}}, “Count+1”),
+React.createElement(‘button’, {onClick: function(){ setView(view===“budget”?“add”:“budget”); }, style:{padding:10, background:”#E8703A”, color:“white”, border:“none”, borderRadius:8, cursor:“pointer”}}, “Toggle view”)
+);
 }
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+ReactDOM.createRoot(document.getElementById(“root”)).render(React.createElement(App));
 </script>
+
 </body>
 </html>

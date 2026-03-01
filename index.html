@@ -1,17 +1,493 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Spend Together"/>
+  <meta name="theme-color" content="#141820"/>
+  <title>Spend Together</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body,#root{height:100%;background:#141820;overflow:hidden;}
+    @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+    @keyframes toastIn{0%{opacity:0;transform:translateY(16px) scale(0.96)}12%,88%{opacity:1;transform:none}100%{opacity:0}}
+    .scroll-area{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+    .scroll-area::-webkit-scrollbar{width:3px}
+    .tap-btn{transition:opacity 0.12s,transform 0.12s}.tap-btn:active{opacity:0.7;transform:scale(0.95)}
+    .cat-card{transition:transform 0.15s}.cat-card:active{transform:scale(0.984)}
+    input[type=color]::-webkit-color-swatch-wrapper{padding:2px}
+    input[type=color]::-webkit-color-swatch{border:none;border-radius:6px}
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet"/>
 </head>
-<body style="background:white;color:black;font-size:24px;padding:40px;font-family:sans-serif;">
-  <h1>✅ It works!</h1>
-  <p>If you can see this, the deployment is working.</p>
-  <p id="js">JavaScript is NOT working</p>
-  <script>
-    document.getElementById('js').textContent = '✅ JavaScript is working too!';
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  <script type="text/babel">
+    var useState = React.useState;
+    var useEffect = React.useEffect;
+    var useRef = React.useRef;
+
+```
+var FIREBASE_CONFIG = {
+  apiKey: "AIzaSyANRAg_zEiffHkxW1CzNKBSYYIaYknq-6s",
+  authDomain: "spend-together-1374d.firebaseapp.com",
+  databaseURL: "https://spend-together-1374d-default-rtdb.firebaseio.com",
+  projectId: "spend-together-1374d",
+  storageBucket: "spend-together-1374d.firebasestorage.app",
+  messagingSenderId: "574836971924",
+  appId: "1:574836971924:web:82689a74d1cd4c9cc19781"
+};
+var HOUSEHOLD_CODE = "our-budget";
+var LS_CATS="budget_cats_v11", LS_EXPS="budget_exps_v11", LS_THEME="budget_theme_v11", LS_INCOME="budget_income_v11";
+
+var DEFAULT_CATEGORIES = [
+  {id:"groceries",name:"Groceries",emoji:"🛒",color:"#27AE82",budget:600},
+  {id:"dining",name:"Dining Out",emoji:"🍽️",color:"#E8703A",budget:300},
+  {id:"transport",name:"Transport",emoji:"🚗",color:"#2E86C1",budget:200},
+  {id:"utilities",name:"Utilities",emoji:"⚡",color:"#D4AC0D",budget:250},
+  {id:"entertainment",name:"Entertainment",emoji:"🎬",color:"#8E44AD",budget:150},
+  {id:"shopping",name:"Shopping",emoji:"🛍️",color:"#C0392B",budget:400},
+  {id:"health",name:"Health",emoji:"💊",color:"#16A085",budget:150},
+  {id:"savings",name:"Savings",emoji:"🏦",color:"#1E8449",budget:500},
+];
+
+var DURATIONS = ["Weekly","Monthly","Yearly"];
+var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function fmt(n){return new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(n);}
+function fmtDec(n){return new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:2}).format(n);}
+function lsGet(k,f){try{var v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+var _cachedLat=null,_cachedLng=null;
+function isDaytime(){var h=new Date().getHours();return h>=6&&h<20;}
+
+function getTheme(isDark){
+  return isDark?{
+    bg:"#141820",bgHeader:"linear-gradient(180deg,#1D2330 0%,#141820 100%)",
+    bgCard:"rgba(255,255,255,0.04)",bgInput:"rgba(255,255,255,0.08)",
+    bgNav:"#1A1F2E",bgPill:"rgba(255,255,255,0.06)",bgPillActive:"rgba(255,255,255,0.15)",
+    bgSummary:"rgba(255,255,255,0.03)",borderCard:"rgba(255,255,255,0.06)",
+    borderInput:"rgba(255,255,255,0.12)",borderNav:"rgba(255,255,255,0.07)",
+    borderDash:"rgba(255,255,255,0.12)",text:"#FFFFFF",textSub:"rgba(255,255,255,0.55)",
+    textMuted:"rgba(255,255,255,0.35)",textFaint:"rgba(255,255,255,0.2)",textNav:"rgba(255,255,255,0.28)",
+    accent:"#52D9A4",accentGrad:"linear-gradient(135deg,#52D9A4,#3BBFAD)",accentText:"#141820",
+    fillBg:"rgba(255,255,255,0.07)",over:"#FF5252",near:"#FFB74D",remaining:"#FFD54F",shadow:"none",
+  }:{
+    bg:"#EEF2EE",bgHeader:"linear-gradient(180deg,#FFFFFF 0%,#EEF2EE 100%)",
+    bgCard:"#FFFFFF",bgInput:"#F5F8F5",bgNav:"#FFFFFF",bgPill:"rgba(0,0,0,0.05)",
+    bgPillActive:"rgba(0,0,0,0.12)",bgSummary:"#FFFFFF",borderCard:"rgba(0,0,0,0.07)",
+    borderInput:"rgba(0,0,0,0.12)",borderNav:"rgba(0,0,0,0.08)",borderDash:"rgba(0,0,0,0.12)",
+    text:"#1A1A1A",textSub:"rgba(0,0,0,0.6)",textMuted:"rgba(0,0,0,0.4)",textFaint:"rgba(0,0,0,0.2)",
+    textNav:"rgba(0,0,0,0.35)",accent:"#1E8449",accentGrad:"linear-gradient(135deg,#27AE82,#1E8449)",
+    accentText:"#FFFFFF",fillBg:"rgba(0,0,0,0.07)",over:"#C0392B",near:"#D35400",remaining:"#B7950B",
+    shadow:"0 2px 12px rgba(0,0,0,0.06)",
+  };
+}
+
+function fillColor(pct,base,t){return pct>=1?t.over:pct>=0.85?t.near:base;}
+
+function FillBar(props){
+  var pct=props.pct,color=props.color,t=props.t;
+  var clamp=Math.min(pct,1),fc=fillColor(pct,color,t);
+  return (
+    <div style={{position:"relative",height:10,background:t.fillBg,borderRadius:99,overflow:"hidden"}}>
+      <div style={{position:"absolute",left:0,top:0,height:"100%",width:(clamp*100)+"%",
+        background:pct>=1?"repeating-linear-gradient(45deg,"+fc+" 0,"+fc+" 6px,"+t.over+"99 6px,"+t.over+"99 12px)":fc,
+        borderRadius:99,transition:"width 0.7s"}}/>
+    </div>
+  );
+}
+
+function SummaryRing(props){
+  var spent=props.spent,total=props.total,t=props.t,size=props.size||128;
+  var pct=total>0?Math.min(spent/total,1):0;
+  var r=size*0.42,cx=size/2,cy=size/2,circ=2*Math.PI*r;
+  var fc=pct>=1?t.over:pct>=0.85?t.near:t.accent;
+  var fs=size<110?11:15;
+  return(
+    <svg width={size} height={size} style={{display:"block",flexShrink:0}}>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={t.fillBg} strokeWidth={size*0.078}/>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={fc} strokeWidth={size*0.078}
+        strokeDasharray={(pct*circ)+" "+circ} strokeLinecap="round"
+        transform={"rotate(-90 "+cx+" "+cy+")"}/>
+      <text x={cx} y={cy-fs*0.55} textAnchor="middle" fill={t.text} fontSize={fs} fontWeight={800} fontFamily="Nunito,sans-serif">{fmt(spent)}</text>
+      <text x={cx} y={cy+fs*0.65} textAnchor="middle" fill={t.textMuted} fontSize={fs-4} fontFamily="Nunito,sans-serif">{"of "+fmt(total)}</text>
+      <text x={cx} y={cy+fs*1.85} textAnchor="middle" fill={fc} fontSize={fs-2} fontWeight={800} fontFamily="Nunito,sans-serif">{Math.round(pct*100)+"%"}</text>
+    </svg>
+  );
+}
+
+var NAV_ITEMS=[
+  {id:"budget",icon:"📊",label:"Budget"},
+  {id:"add",icon:"＋",label:"Add"},
+  {id:"history",icon:"🕒",label:"History"},
+  {id:"manage",icon:"⚙",label:"Manage"},
+];
+
+function App(){
+  var catState = useState(function(){return lsGet(LS_CATS,DEFAULT_CATEGORIES);});
+  var categories = catState[0], setCategories = catState[1];
+  var expState = useState(function(){return lsGet(LS_EXPS,[]);});
+  var expenses = expState[0], setExpenses = expState[1];
+  var incState = useState(function(){return lsGet(LS_INCOME,{monthly:0});});
+  var income = incState[0], setIncome = incState[1];
+  var themeState = useState(function(){return lsGet(LS_THEME,"auto");});
+  var themeMode = themeState[0], setThemeMode = themeState[1];
+  var durState = useState("Monthly");
+  var duration = durState[0], setDuration = durState[1];
+  var viewState = useState("budget");
+  var view = viewState[0], setView = viewState[1];
+  var winWState = useState(window.innerWidth);
+  var winW = winWState[0], setWinW = winWState[1];
+  var addFormState = useState({catId:"",amount:"",note:"",date:new Date().toISOString().split("T")[0]});
+  var addForm = addFormState[0], setAddForm = addFormState[1];
+  var editCatState = useState(null);
+  var editCat = editCatState[0], setEditCat = editCatState[1];
+  var newCatState = useState({name:"",emoji:"📦",budget:"",color:"#27AE82"});
+  var newCat = newCatState[0], setNewCat = newCatState[1];
+  var showIncState = useState(false);
+  var showIncome = showIncState[0], setShowIncome = showIncState[1];
+  var incEditState = useState("");
+  var incEdit = incEditState[0], setIncEdit = incEditState[1];
+  var toastState = useState(null);
+  var toast = toastState[0], setToast = toastState[1];
+  var syncState = useState("local");
+  var syncStatus = syncState[0], setSyncStatus = syncState[1];
+  var periodState = useState(function(){
+    var d=new Date();
+    return {month:d.getMonth(),year:d.getFullYear(),week:1};
+  });
+  var period = periodState[0], setPeriod = periodState[1];
+  var scrollRef = useRef(null);
+  var fbRefs = useRef({});
+
+  var isDark = themeMode==="dark"?true:themeMode==="light"?false:!isDaytime();
+  var t = getTheme(isDark);
+  var isTablet = winW>=768;
+
+  useEffect(function(){
+    function h(){setWinW(window.innerWidth);}
+    window.addEventListener("resize",h);
+    return function(){window.removeEventListener("resize",h);};
+  },[]);
+
+  useEffect(function(){
+    // Firebase init
+    var script1=document.createElement("script");
+    script1.type="module";
+    script1.textContent=[
+      'import{initializeApp}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";',
+      'import{getDatabase,ref,set,onValue}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";',
+      'try{',
+      'var app=initializeApp('+JSON.stringify(FIREBASE_CONFIG)+');',
+      'var db=getDatabase(app);',
+      'window._fbDB=db;window._fbRef=ref;window._fbSet=set;window._fbOnValue=onValue;',
+      'window.dispatchEvent(new Event("fb-ready"));',
+      '}catch(e){console.error("FB init error",e);}',
+    ].join("");
+    document.head.appendChild(script1);
+
+    function onFbReady(){
+      setSyncStatus("connecting");
+      var db=window._fbDB,fbRef=window._fbRef,fbSet=window._fbSet,fbOnValue=window._fbOnValue;
+      var catsR=fbRef(db,HOUSEHOLD_CODE+"/categories");
+      var expsR=fbRef(db,HOUSEHOLD_CODE+"/expenses");
+      var incR=fbRef(db,HOUSEHOLD_CODE+"/income");
+      fbRefs.current={set:fbSet,catsRef:catsR,expsRef:expsR,incRef:incR};
+      fbOnValue(catsR,function(snap){var v=snap.val();if(v){setCategories(v);lsSet(LS_CATS,v);}});
+      fbOnValue(expsR,function(snap){var v=snap.val();if(v){setExpenses(v);lsSet(LS_EXPS,v);}setSyncStatus("synced");});
+      fbOnValue(incR,function(snap){var v=snap.val();if(v){setIncome(v);lsSet(LS_INCOME,v);}});
+    }
+    window.addEventListener("fb-ready",onFbReady);
+    return function(){window.removeEventListener("fb-ready",onFbReady);};
+  },[]);
+
+  function showToast(msg){setToast(msg);setTimeout(function(){setToast(null);},2200);}
+  function saveCats(c){setCategories(c);lsSet(LS_CATS,c);if(fbRefs.current.set)fbRefs.current.set(fbRefs.current.catsRef,c).catch(console.error);}
+  function saveExps(e){setExpenses(e);lsSet(LS_EXPS,e);if(fbRefs.current.set)fbRefs.current.set(fbRefs.current.expsRef,e).catch(console.error);}
+  function saveIncome(i){setIncome(i);lsSet(LS_INCOME,i);if(fbRefs.current.set&&fbRefs.current.incRef)fbRefs.current.set(fbRefs.current.incRef,i).catch(console.error);}
+  function cycleTheme(){var next=themeMode==="auto"?"light":themeMode==="light"?"dark":"auto";setThemeMode(next);lsSet(LS_THEME,next);}
+
+  function inPeriod(exp){
+    var d=new Date(exp.date+"T12:00:00");
+    if(duration==="Monthly")return d.getMonth()===period.month&&d.getFullYear()===period.year;
+    if(duration==="Yearly")return d.getFullYear()===period.year;
+    return true;
+  }
+  function shiftPeriod(dir){
+    if(duration==="Monthly"){
+      var m=period.month+dir,y=period.year;
+      if(m<0){m=11;y--;}if(m>11){m=0;y++;}
+      setPeriod(function(p){return Object.assign({},p,{month:m,year:y});});
+    } else {
+      setPeriod(function(p){return Object.assign({},p,{year:p.year+dir});});
+    }
+  }
+  function periodLabel(){
+    if(duration==="Monthly")return MONTHS[period.month]+" "+period.year;
+    if(duration==="Yearly")return ""+period.year;
+    return "This Week";
+  }
+
+  var periodExpenses=expenses.filter(inPeriod);
+  function spentFor(catId){return periodExpenses.filter(function(e){return e.catId===catId;}).reduce(function(s,e){return s+e.amount;},0);}
+  var totalBudget=categories.reduce(function(s,c){return s+c.budget;},0);
+  var totalSpent=categories.reduce(function(s,c){return s+spentFor(c.id);},0);
+  var remaining=totalBudget-totalSpent;
+  var periodIncome=income.monthly>0?(duration==="Yearly"?income.monthly*12:income.monthly):0;
+  var actualSavings=periodIncome>0?periodIncome-totalSpent:null;
+
+  function handleAdd(){
+    if(!addForm.catId||!addForm.amount||isNaN(parseFloat(addForm.amount)))return;
+    saveExps([{id:Date.now(),catId:addForm.catId,amount:parseFloat(addForm.amount),note:addForm.note.trim(),date:addForm.date}].concat(expenses));
+    setAddForm({catId:"",amount:"",note:"",date:new Date().toISOString().split("T")[0]});
+    showToast("Saved ✓");setView("budget");
+  }
+  function handleDel(id){saveExps(expenses.filter(function(e){return e.id!==id;}));showToast("Deleted");}
+  function handleSaveEdit(){
+    if(!editCat||!editCat.name.trim()||!editCat.budget)return;
+    saveCats(categories.map(function(c){return c.id===editCat.id?Object.assign({},editCat,{budget:parseFloat(editCat.budget)}):c;}));
+    setEditCat(null);showToast("Saved ✓");
+  }
+  function handleAddCat(){
+    var name=newCat.name.trim(),budget=parseFloat(newCat.budget);
+    if(!name||!budget||isNaN(budget)){showToast("Fill name & budget");return;}
+    saveCats(categories.concat([{id:"cat_"+Date.now(),name:name,emoji:newCat.emoji||"📦",color:newCat.color,budget:budget}]));
+    setNewCat({name:"",emoji:"📦",budget:"",color:"#27AE82"});showToast('"'+name+'" added ✓');
+  }
+  function handleDelCat(id){saveCats(categories.filter(function(c){return c.id!==id;}));}
+  function handleSaveIncome(){var v=parseFloat(incEdit)||0;saveIncome({monthly:v});setShowIncome(false);showToast(v>0?"Income saved ✓":"Cleared");}
+
+  var themeIcon=themeMode==="auto"?"🌗":themeMode==="light"?"☀️":"🌙";
+  var syncPill={local:{color:"#D4AC0D",label:"💾 Local"},connecting:{color:"#2E86C1",label:"⟳ Connecting"},synced:{color:t.accent,label:"✦ Synced"},error:{color:t.over,label:"✕ Error"}}[syncStatus];
+  var canSave=addForm.catId&&addForm.amount&&!isNaN(parseFloat(addForm.amount));
+  var selCat=categories.find(function(c){return c.id===addForm.catId;});
+
+  var IS={width:"100%",background:t.bgInput,border:"1px solid "+t.borderInput,borderRadius:12,padding:"12px 14px",color:t.text,fontSize:15,fontWeight:700,outline:"none",marginBottom:14,display:"block",fontFamily:"Nunito,sans-serif"};
+
+  var periodNav=(
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:t.bgPill,borderRadius:12,padding:"8px 6px"}}>
+      <button className="tap-btn" onClick={function(){shiftPeriod(-1);}} style={{background:"none",border:"none",color:t.textMuted,fontSize:22,cursor:"pointer",padding:"0 10px"}}>‹</button>
+      <span style={{fontWeight:800,fontSize:14,color:t.text}}>{periodLabel()}</span>
+      <button className="tap-btn" onClick={function(){shiftPeriod(1);}} style={{background:"none",border:"none",color:t.textMuted,fontSize:22,cursor:"pointer",padding:"0 10px"}}>›</button>
+    </div>
+  );
+
+  return (
+    <div style={{fontFamily:"Nunito,sans-serif",background:t.bg,height:"100dvh",maxWidth:isTablet?9999:430,margin:"0 auto",color:t.text,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      {toast&&<div style={{position:"fixed",bottom:90,left:"50%",transform:"translateX(-50%)",background:t.accent,color:t.accentText,padding:"10px 22px",borderRadius:99,fontSize:14,fontWeight:800,zIndex:300,whiteSpace:"nowrap",pointerEvents:"none"}}>{toast}</div>}
+      
+      {/* Header */}
+      <div style={{flexShrink:0,padding:"env(safe-area-inset-top,22px) 20px 14px",background:t.bgHeader}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <div>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+              <div style={{fontSize:10,color:t.textMuted,letterSpacing:3,textTransform:"uppercase"}}>Our Budget</div>
+              <div style={{fontSize:10,color:syncPill.color,fontWeight:800,background:syncPill.color+"22",borderRadius:99,padding:"2px 8px"}}>{syncPill.label}</div>
+            </div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:t.text}}>Spend Together</div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
+            <button className="tap-btn" onClick={cycleTheme} style={{background:t.bgPill,border:"1px solid "+t.borderCard,borderRadius:20,padding:"5px 12px",cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:800,color:t.textSub}}>{themeIcon} {themeMode==="auto"?"Auto":themeMode==="light"?"Light":"Dark"}</button>
+            <div style={{display:"flex",background:t.bgPill,borderRadius:20,padding:3,gap:2}}>
+              {DURATIONS.map(function(d){return(
+                <button key={d} className="tap-btn" onClick={function(){setDuration(d);}} style={{border:"none",borderRadius:17,padding:"5px 10px",fontSize:11,fontWeight:800,cursor:"pointer",fontFamily:"inherit",background:duration===d?t.bgPillActive:"transparent",color:duration===d?t.text:t.textMuted}}>{d.slice(0,2)}</button>
+              );})}
+            </div>
+          </div>
+        </div>
+        {periodNav}
+      </div>
+
+      {/* Main content */}
+      <div ref={scrollRef} className="scroll-area" style={{flex:1,minHeight:0}}>
+
+        {view==="budget"&&(
+          <div style={{padding:"8px 16px 16px"}}>
+            {/* Income toggle */}
+            <div className="tap-btn" onClick={function(){setShowIncome(function(v){return !v;});}} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:t.bgCard,borderRadius:16,padding:"12px 16px",marginBottom:10,border:"1px solid "+t.borderCard,cursor:"pointer"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:20}}>💰</span>
+                <div>
+                  <div style={{fontSize:11,color:t.textMuted,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Monthly Income</div>
+                  <div style={{fontSize:16,fontWeight:900,color:periodIncome>0?t.accent:t.textFaint}}>{periodIncome>0?fmtDec(income.monthly):"Tap to set income"}</div>
+                </div>
+              </div>
+              <span style={{color:t.textMuted}}>{showIncome?"▲":"▼"}</span>
+            </div>
+            {showIncome&&(
+              <div style={{background:t.bgCard,borderRadius:16,padding:18,marginBottom:10,border:"1px solid "+t.accent+"44"}}>
+                <div style={{fontSize:10,color:t.textMuted,fontWeight:700,textTransform:"uppercase",letterSpacing:2,marginBottom:8}}>Monthly Take-Home ($)</div>
+                <input type="number" inputMode="decimal" placeholder="e.g. 5000" value={incEdit} onChange={function(e){setIncEdit(e.target.value);}} autoFocus style={{...IS,fontSize:28,fontWeight:900,textAlign:"center",color:t.accent}}/>
+                <button className="tap-btn" onClick={handleSaveIncome} style={{width:"100%",padding:14,background:t.accentGrad,color:t.accentText,border:"none",borderRadius:14,fontSize:15,fontFamily:"Nunito,sans-serif",fontWeight:900,cursor:"pointer",marginBottom:8}}>Save Income</button>
+                <button className="tap-btn" onClick={function(){setShowIncome(false);}} style={{width:"100%",padding:12,background:t.bgPill,border:"1px solid "+t.borderCard,borderRadius:14,fontSize:14,fontFamily:"Nunito,sans-serif",cursor:"pointer",color:t.textMuted}}>Cancel</button>
+              </div>
+            )}
+            {/* Summary ring */}
+            <div style={{display:"flex",alignItems:"center",gap:16,background:t.bgCard,borderRadius:20,padding:"16px 18px",marginBottom:12,border:"1px solid "+t.borderCard}}>
+              <SummaryRing spent={totalSpent} total={periodIncome||totalBudget} t={t} size={120}/>
+              <div style={{flex:1}}>
+                {periodIncome>0&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}><span style={{fontSize:11,color:t.textMuted}}>Income</span><span style={{fontSize:13,fontWeight:700,color:t.accent}}>{fmtDec(periodIncome)}</span></div>}
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}><span style={{fontSize:11,color:t.textMuted}}>Budgeted</span><span style={{fontSize:13,fontWeight:700,color:t.textSub}}>{fmt(totalBudget)}</span></div>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}><span style={{fontSize:11,color:t.textMuted}}>Spent</span><span style={{fontSize:16,fontWeight:900,color:totalSpent>totalBudget?t.over:t.accent}}>{fmtDec(totalSpent)}</span></div>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}><span style={{fontSize:11,color:t.textMuted}}>Remaining</span><span style={{fontSize:13,fontWeight:700,color:remaining<0?t.over:t.remaining}}>{fmtDec(remaining)}</span></div>
+                {actualSavings!==null&&<div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:11,color:t.textMuted}}>Savings</span><span style={{fontSize:13,fontWeight:700,color:actualSavings>=0?t.accent:t.over}}>{fmtDec(actualSavings)}</span></div>}
+              </div>
+            </div>
+            {/* Category cards */}
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {categories.map(function(cat){
+                var spent=spentFor(cat.id),pct=cat.budget>0?spent/cat.budget:0,over=pct>=1,near=pct>=0.85&&!over;
+                return(
+                  <div key={cat.id} className="cat-card" onClick={function(){setAddForm(function(f){return Object.assign({},f,{catId:cat.id});});setView("add");}} style={{background:t.bgCard,borderRadius:16,padding:"14px 16px",border:"1px solid "+(over?t.over+"44":near?t.near+"33":t.borderCard),cursor:"pointer"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                      <div style={{display:"flex",alignItems:"center",gap:10}}>
+                        <div style={{width:36,height:36,borderRadius:10,background:cat.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{cat.emoji}</div>
+                        <div>
+                          <div style={{fontWeight:800,fontSize:14,color:t.text}}>{cat.name}</div>
+                          <div style={{fontSize:11,color:t.textMuted}}>Budget: {fmt(cat.budget)}</div>
+                        </div>
+                      </div>
+                      <div style={{textAlign:"right"}}>
+                        <div style={{fontWeight:900,fontSize:16,color:fillColor(pct,cat.color,t)}}>{fmtDec(spent)}</div>
+                        <div style={{fontSize:11,fontWeight:700,color:over?t.over:near?t.near:t.textFaint}}>{over?"+"+fmtDec(spent-cat.budget)+" over":fmt(cat.budget-spent)+" left"}</div>
+                      </div>
+                    </div>
+                    <FillBar pct={pct} color={cat.color} t={t}/>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {view==="add"&&(
+          <div style={{padding:"10px 16px 24px"}}>
+            <div style={{background:t.bgCard,borderRadius:18,padding:"14px 18px",marginBottom:10,border:"1px solid "+(selCat?selCat.color+"44":t.borderCard)}}>
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                {selCat&&<div style={{width:42,height:42,borderRadius:12,background:selCat.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{selCat.emoji}</div>}
+                <div style={{flex:1}}>
+                  <div style={{fontSize:10,color:t.textMuted,fontWeight:700,textTransform:"uppercase",letterSpacing:1.5,marginBottom:4}}>{selCat?selCat.name:"Select a category below"}</div>
+                  <input type="number" inputMode="decimal" placeholder="0.00" value={addForm.amount} onChange={function(e){setAddForm(function(f){return Object.assign({},f,{amount:e.target.value});});}} autoFocus style={{fontSize:34,fontWeight:900,color:t.accent,padding:0,background:"transparent",border:"none",width:"100%",outline:"none",fontFamily:"Nunito,sans-serif"}}/>
+                </div>
+              </div>
+            </div>
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:10,color:t.textMuted,fontWeight:700,textTransform:"uppercase",letterSpacing:1.5,marginBottom:6}}>Category</div>
+              <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:6,WebkitOverflowScrolling:"touch"}}>
+                {categories.map(function(cat){var sel=addForm.catId===cat.id;return(
+                  <button key={cat.id} className="tap-btn" onClick={function(){setAddForm(function(f){return Object.assign({},f,{catId:cat.id});});}} style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,border:"2px solid "+(sel?cat.color:t.borderCard),background:sel?cat.color+"22":t.bgCard,borderRadius:14,padding:"8px 12px",cursor:"pointer",fontFamily:"inherit",color:sel?cat.color:t.textMuted,fontWeight:800,fontSize:13}}>
+                    <span style={{fontSize:17}}>{cat.emoji}</span><span>{cat.name}</span>
+                  </button>
+                );})}
+              </div>
+            </div>
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:10,color:t.textMuted,fontWeight:700,textTransform:"uppercase",letterSpacing:1.5,marginBottom:6}}>Note</div>
+              <input type="text" placeholder="What was this for?" value={addForm.note} onChange={function(e){setAddForm(function(f){return Object.assign({},f,{note:e.target.value});});}} style={{...IS,fontSize:14,marginBottom:0}}/>
+            </div>
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:10,color:t.textMuted,fontWeight:700,textTransform:"uppercase",letterSpacing:1.5,marginBottom:6}}>Date</div>
+              <input type="date" value={addForm.date} onChange={function(e){setAddForm(function(f){return Object.assign({},f,{date:e.target.value});});}} style={{...IS,marginBottom:0,colorScheme:isDark?"dark":"light"}}/>
+            </div>
+            <button className="tap-btn" onClick={handleAdd} disabled={!canSave} style={{width:"100%",padding:16,background:t.accentGrad,color:t.accentText,border:"none",borderRadius:14,fontSize:16,fontFamily:"Nunito,sans-serif",fontWeight:900,cursor:"pointer",marginBottom:10,opacity:canSave?1:0.4}}>Save Expense ✓</button>
+            <button className="tap-btn" onClick={function(){setView("budget");}} style={{width:"100%",padding:13,background:t.bgPill,border:"1px solid "+t.borderCard,borderRadius:14,fontSize:14,fontFamily:"Nunito,sans-serif",cursor:"pointer",color:t.textMuted}}>Cancel</button>
+          </div>
+        )}
+
+        {view==="history"&&(
+          <div style={{padding:"8px 16px 16px"}}>
+            {periodExpenses.length===0?(
+              <div style={{textAlign:"center",padding:"80px 0",color:t.textMuted}}><div style={{fontSize:48,marginBottom:16}}>🌿</div>No expenses this period</div>
+            ):(
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {periodExpenses.map(function(exp){
+                  var cat=categories.find(function(c){return c.id===exp.catId;});
+                  return(
+                    <div key={exp.id} style={{background:t.bgCard,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",gap:12,border:"1px solid "+t.borderCard}}>
+                      <div style={{width:36,height:36,borderRadius:10,background:(cat&&cat.color||"#888")+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{cat&&cat.emoji||"📦"}</div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontWeight:800,fontSize:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:t.text}}>{exp.note||cat&&cat.name||"Expense"}</div>
+                        <div style={{fontSize:11,color:t.textMuted,marginTop:2}}>{cat&&cat.name} · {new Date(exp.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</div>
+                      </div>
+                      <span style={{fontWeight:900,fontSize:15,color:cat&&cat.color||t.accent,flexShrink:0}}>{fmtDec(exp.amount)}</span>
+                      <button className="tap-btn" onClick={function(){handleDel(exp.id);}} style={{background:t.over+"18",border:"none",borderRadius:8,padding:"5px 9px",color:t.over,cursor:"pointer",fontSize:13,flexShrink:0}}>✕</button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {view==="manage"&&(
+          <div style={{padding:"8px 16px 24px"}}>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+              {categories.map(function(cat,i){return(
+                <div key={cat.id} style={{background:t.bgCard,borderRadius:16,padding:14,border:"1px solid "+t.borderCard}}>
+                  {editCat&&editCat.id===cat.id?(
+                    <div>
+                      <div style={{display:"flex",gap:10,marginBottom:10}}>
+                        <input value={editCat.emoji} onChange={function(e){setEditCat(function(f){return Object.assign({},f,{emoji:e.target.value});});}} style={{...IS,width:52,textAlign:"center",fontSize:22,padding:8,marginBottom:0}} maxLength={2}/>
+                        <input value={editCat.name} onChange={function(e){setEditCat(function(f){return Object.assign({},f,{name:e.target.value});});}} style={{...IS,flex:1,marginBottom:0}} placeholder="Name"/>
+                      </div>
+                      <input type="number" value={editCat.budget} onChange={function(e){setEditCat(function(f){return Object.assign({},f,{budget:e.target.value});});}} style={IS} placeholder="Budget ($)"/>
+                      <div style={{display:"flex",gap:8}}>
+                        <button className="tap-btn" onClick={handleSaveEdit} style={{flex:1,padding:11,background:t.accentGrad,color:t.accentText,border:"none",borderRadius:14,fontSize:14,fontFamily:"Nunito,sans-serif",fontWeight:900,cursor:"pointer"}}>Save ✓</button>
+                        <button className="tap-btn" onClick={function(){setEditCat(null);}} style={{flex:1,padding:11,background:t.bgPill,border:"1px solid "+t.borderCard,borderRadius:14,fontSize:14,fontFamily:"Nunito,sans-serif",cursor:"pointer",color:t.textMuted}}>Cancel</button>
+                      </div>
+                    </div>
+                  ):(
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{width:36,height:36,borderRadius:10,background:cat.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{cat.emoji}</div>
+                      <div style={{flex:1}}>
+                        <div style={{fontWeight:800,fontSize:14,color:t.text}}>{cat.name}</div>
+                        <div style={{fontSize:12,color:t.textMuted}}>{fmt(cat.budget)}</div>
+                      </div>
+                      <button className="tap-btn" onClick={function(){setEditCat(Object.assign({},cat));}} style={{background:t.bgPill,border:"1px solid "+t.borderCard,borderRadius:8,padding:"6px 12px",color:t.textSub,cursor:"pointer",fontSize:12,fontFamily:"inherit",fontWeight:800}}>Edit</button>
+                      <button className="tap-btn" onClick={function(){handleDelCat(cat.id);}} style={{background:t.over+"18",border:"none",borderRadius:8,padding:"6px 10px",color:t.over,cursor:"pointer",fontSize:14}}>✕</button>
+                    </div>
+                  )}
+                </div>
+              );})}
+            </div>
+            <div style={{background:t.bgCard,borderRadius:16,padding:18,border:"1px dashed "+t.borderDash}}>
+              <div style={{fontSize:12,color:t.textMuted,fontWeight:800,textTransform:"uppercase",letterSpacing:1,marginBottom:14}}>＋ New Category</div>
+              <div style={{display:"flex",gap:10,marginBottom:12}}>
+                <input value={newCat.emoji} onChange={function(e){setNewCat(function(f){return Object.assign({},f,{emoji:e.target.value});});}} style={{...IS,width:56,textAlign:"center",fontSize:22,padding:8,marginBottom:0}} maxLength={2}/>
+                <input value={newCat.name} onChange={function(e){setNewCat(function(f){return Object.assign({},f,{name:e.target.value});});}} style={{...IS,flex:1,marginBottom:0}} placeholder="Category name"/>
+              </div>
+              <input type="number" value={newCat.budget} onChange={function(e){setNewCat(function(f){return Object.assign({},f,{budget:e.target.value});});}} style={IS} placeholder="Budget ($)"/>
+              <button className="tap-btn" onClick={handleAddCat} style={{width:"100%",padding:14,background:t.accentGrad,color:t.accentText,border:"none",borderRadius:14,fontSize:15,fontFamily:"Nunito,sans-serif",fontWeight:900,cursor:"pointer"}}>Add Category</button>
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      {/* Bottom nav */}
+      <div style={{flexShrink:0,background:t.bgNav,borderTop:"1px solid "+t.borderNav,display:"flex",paddingBottom:"env(safe-area-inset-bottom,0px)"}}>
+        {NAV_ITEMS.map(function(tab){return(
+          <button key={tab.id} className="tap-btn" onClick={function(){setView(tab.id);}} style={{flex:1,border:"none",background:"none",padding:"12px 0 10px",cursor:"pointer",color:view===tab.id?t.accent:t.textNav,fontFamily:"inherit"}}>
+            <div style={{fontSize:tab.id==="add"?22:18}}>{tab.icon}</div>
+            <div style={{fontSize:10,marginTop:3,fontWeight:view===tab.id?900:600}}>{tab.label}</div>
+          </button>
+        );})}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+```
+
   </script>
 </body>
 </html>

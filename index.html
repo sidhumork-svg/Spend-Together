@@ -5,45 +5,13 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Debug</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
 </head>
-<body style="background:white;color:black;padding:20px;font-family:sans-serif;">
-<div id="log"></div>
-<div id="root"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<body style="background:yellow;color:black;padding:20px;font-family:sans-serif;font-size:18px;">
+<h1>Hello!</h1>
+<div id="out">JS not running</div>
 <script>
-function log(msg,color){
-  var d=document.createElement('div');
-  d.style.cssText='color:'+(color||'black')+';margin:4px 0;padding:6px;background:#eee;border-radius:4px;font-size:13px;word-break:break-all;';
-  d.textContent=msg;
-  document.getElementById('log').appendChild(d);
-}
-
-window.onerror=function(msg,src,line,col,err){
-log(‘❌ GLOBAL ERROR: ‘+msg+’ (line ‘+line+’)’, ‘red’);
-return false;
-};
-
-log(‘Starting…’);
-
-var h=React.createElement,useState=React.useState;
-log(’React ok: ’+React.version);
-
-function App(){
-log(‘App() called’);
-var s=useState(0);
-log(‘useState ok’);
-return h(‘div’,{style:{color:‘green’,fontSize:20,fontWeight:‘bold’}},‘✅ Works! Count=’+s[0]);
-}
-
-log(‘About to render…’);
-try {
-ReactDOM.createRoot(document.getElementById(“root”)).render(h(App));
-log(‘Render called’);
-} catch(e) {
-log(’❌ ’+e.message,‘red’);
-}
+document.getElementById('out').textContent = 'JS IS RUNNING ✅ - ' + new Date().toTimeString();
 </script>
-
 </body>
 </html>

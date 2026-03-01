@@ -3,43 +3,45 @@
 <html>
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <title>Spend Together</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Debug</title>
 </head>
-<body style="background:white;color:black;">
+<body style="background:white;color:black;padding:20px;font-family:sans-serif;">
+<div id="log"></div>
 <div id="root"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
-var h=React.createElement,useState=React.useState;
-
-function App(){
-var s=useState(“budget”);
-var view=s[0],setView=s[1];
-
-return h(‘div’,{style:{minHeight:“100vh”,display:“flex”,flexDirection:“column”,fontFamily:“sans-serif”,background:”#141820”,color:“white”}},
-h(‘div’,{style:{padding:20}},
-h(‘h1’,{style:{color:”#52D9A4”}},“✅ Spend Together”),
-h(‘p’,null,“Current view: “+view)
-),
-h(‘div’,{style:{flex:1,padding:20}},
-h(‘div’,{style:{background:“rgba(255,255,255,0.08)”,borderRadius:16,padding:20,marginBottom:12}},
-h(‘b’,null,“🛒 Groceries — $600”)
-)
-),
-h(‘div’,{style:{display:“flex”,borderTop:“1px solid rgba(255,255,255,0.1)”}},
-[‘Budget’,‘Add’,‘History’,‘Manage’].map(function(label){
-return h(‘button’,{key:label,onClick:function(){setView(label);},style:{flex:1,border:“none”,background:”#1A1F2E”,color:”#52D9A4”,padding:14,fontFamily:“inherit”,fontSize:12,cursor:“pointer”}},label);
-})
-)
-);
+function log(msg,color){
+  var d=document.createElement('div');
+  d.style.cssText='color:'+(color||'black')+';margin:4px 0;padding:6px;background:#eee;border-radius:4px;font-size:13px;word-break:break-all;';
+  d.textContent=msg;
+  document.getElementById('log').appendChild(d);
 }
 
+window.onerror=function(msg,src,line,col,err){
+log(‘❌ GLOBAL ERROR: ‘+msg+’ (line ‘+line+’)’, ‘red’);
+return false;
+};
+
+log(‘Starting…’);
+
+var h=React.createElement,useState=React.useState;
+log(’React ok: ’+React.version);
+
+function App(){
+log(‘App() called’);
+var s=useState(0);
+log(‘useState ok’);
+return h(‘div’,{style:{color:‘green’,fontSize:20,fontWeight:‘bold’}},‘✅ Works! Count=’+s[0]);
+}
+
+log(‘About to render…’);
 try {
-ReactDOM.createRoot(document.getElementById(“root”)).render(React.createElement(App));
+ReactDOM.createRoot(document.getElementById(“root”)).render(h(App));
+log(‘Render called’);
 } catch(e) {
-document.body.innerHTML = ‘<div style="color:red;padding:20px;font-size:16px;">ERROR: ‘+e.message+’<br/>’+e.stack+’</div>’;
+log(’❌ ’+e.message,‘red’);
 }
 </script>
 

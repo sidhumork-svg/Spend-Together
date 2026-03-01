@@ -14,20 +14,16 @@
 function App() {
   var s1 = React.useState(0);
   var count = s1[0], setCount = s1[1];
-  var s2 = React.useState("hello");
-  var str = s2[0];
-
-return React.createElement(‘div’, null,
-React.createElement(‘p’, null, “Count: “ + count),
-React.createElement(‘p’, null, “String: “ + str),
-React.createElement(‘button’, {
-onClick: function(){ setCount(count+1); },
-style:{padding:10, background:”#52D9A4”, border:“none”, borderRadius:8, cursor:“pointer”}
-}, “Tap +1”)
-);
+  var s2 = React.useState(0);
+  var count2 = s2[0], setCount2 = s2[1];
+  return React.createElement('div', null,
+    React.createElement('p', null, "A: " + count),
+    React.createElement('p', null, "B: " + count2),
+    React.createElement('button', {onClick: function(){ setCount(count+1); }, style:{padding:10, background:"#52D9A4", border:"none", borderRadius:8, cursor:"pointer", marginRight:8}}, "Tap A"),
+    React.createElement('button', {onClick: function(){ setCount2(count2+1); }, style:{padding:10, background:"#E8703A", border:"none", borderRadius:8, cursor:"pointer"}}, "Tap B")
+  );
 }
-ReactDOM.createRoot(document.getElementById(“root”)).render(React.createElement(App));
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
 </script>
-
 </body>
 </html>

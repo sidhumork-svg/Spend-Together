@@ -221,7 +221,16 @@ h(‘div’,{style:{fontSize:tab.id===“add”?22:18}},tab.icon),
 h(‘div’,{style:{fontSize:10,marginTop:3,fontWeight:view===tab.id?900:600}},tab.label));})));
 }
 
+window.onerror=function(msg,src,line,col,err){
+document.body.style.background=‘white’;
+document.body.innerHTML=’<div style="padding:20px;color:red;font-size:14px;font-family:sans-serif;"><h2>Error:</h2><p>’+msg+’</p><p>Line: ‘+line+’</p><pre style="white-space:pre-wrap;font-size:11px;">’+(err&&err.stack||’’)+’</pre></div>’;
+};
+try {
 ReactDOM.createRoot(document.getElementById(“root”)).render(React.createElement(App));
+} catch(e) {
+document.body.style.background=‘white’;
+document.body.innerHTML=’<div style="padding:20px;color:red;font-size:14px;font-family:sans-serif;"><h2>Caught Error:</h2><p>’+e.message+’</p><pre style="white-space:pre-wrap;font-size:11px;">’+e.stack+’</pre></div>’;
+}
 </script>
 
 </body>

@@ -1,29 +1,62 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-title" content="Spend Together"/>
+  <meta name="theme-color" content="#141820"/>
+  <title>Spend Together</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    body { margin:0; padding:0; background:#141820; font-family:'Nunito',sans-serif; color:white; }
+    .page { padding: 0 0 80px 0; }
+    .nav { position:fixed; bottom:0; left:0; right:0; background:#1A1F2E; border-top:1px solid rgba(255,255,255,0.07); display:flex; }
+    .nav button { flex:1; border:none; background:none; padding:12px 0 10px; cursor:pointer; color:rgba(255,255,255,0.3); font-family:inherit; font-size:11px; font-weight:600; }
+    .nav button.on { color:#52D9A4; font-weight:900; }
+    .card { background:rgba(255,255,255,0.04); border-radius:16px; padding:14px 16px; margin:0 16px 10px; border:1px solid rgba(255,255,255,0.06); }
+    input { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:12px 14px; color:white; font-size:15px; font-weight:700; outline:none; width:100%; display:block; font-family:'Nunito',sans-serif; margin-bottom:12px; }
+    .btn { width:100%; padding:15px; background:linear-gradient(135deg,#52D9A4,#3BBFAD); color:#141820; border:none; border-radius:14px; font-size:16px; font-family:'Nunito',sans-serif; font-weight:900; cursor:pointer; margin-bottom:10px; }
+    .btn2 { width:100%; padding:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); border-radius:14px; font-size:14px; font-family:'Nunito',sans-serif; cursor:pointer; color:rgba(255,255,255,0.4); }
+    .bar-bg { height:8px; background:rgba(255,255,255,0.07); border-radius:99px; overflow:hidden; }
+    .bar-fg { height:100%; border-radius:99px; }
+    .scroll-x { display:flex; gap:8px; overflow-x:auto; padding:0 16px 8px; -webkit-overflow-scrolling:touch; }
+    .scroll-x::-webkit-scrollbar { display:none; }
+    .toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:#52D9A4; color:#141820; padding:10px 22px; border-radius:99px; font-size:14px; font-weight:800; z-index:999; white-space:nowrap; }
+  </style>
 </head>
-<body style="background:#141820; color:white; padding:20px; font-family:sans-serif;">
+<body>
 <div id="root"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
+// VERSION 42
+var ce = React.createElement;
+var CATS = [
+  {id:"groceries",name:"Groceries",emoji:"G",color:"#27AE82",budget:600},
+  {id:"dining",name:"Dining Out",emoji:"D",color:"#E8703A",budget:300},
+  {id:"transport",name:"Transport",emoji:"T",color:"#2E86C1",budget:200},
+  {id:"utilities",name:"Utilities",emoji:"U",color:"#D4AC0D",budget:250},
+  {id:"entertainment",name:"Entertainment",emoji:"E",color:"#8E44AD",budget:150},
+  {id:"shopping",name:"Shopping",emoji:"S",color:"#C0392B",budget:400},
+  {id:"health",name:"Health",emoji:"H",color:"#16A085",budget:150},
+  {id:"savings",name:"Savings",emoji:"$",color:"#1E8449",budget:500}
+];
+function fmt(n){return "$"+Math.round(n);}
+function fmtD(n){return "$"+n.toFixed(2);}
+function lsG(k,f){try{var v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}}
+function lsS(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
 function App() {
-  var s1 = React.useState(0);
-  var count = s1[0], setCount = s1[1];
-  var s2 = React.useState(0);
-  var count2 = s2[0], setCount2 = s2[1];
-  return React.createElement('div', null,
-    React.createElement('p', null, "A: " + count),
-    React.createElement('p', null, "B: " + count2),
-    React.createElement('button', {onClick: function(){ setCount(count+1); }, style:{padding:10, background:"#52D9A4", border:"none", borderRadius:8, cursor:"pointer", marginRight:8}}, "Tap A"),
-    React.createElement('button', {onClick: function(){ setCount2(count2+1); }, style:{padding:10, background:"#E8703A", border:"none", borderRadius:8, cursor:"pointer"}}, "Tap B")
-  );
+var s1=React.useState(lsG(“cats42”,CATS)), cats=s1[0], setCats=s1[1];
+var s2=React.useState(lsG(“exps42”,[])), exps=s2[0], setExps=s2[1];
+
+return ce(‘div’, null, ce(‘p’, {style:{color:”#52D9A4”,padding:20}}, “VERSION 42 - cats:”+cats.length+” exps:”+exps.length));
 }
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+
+ReactDOM.createRoot(document.getElementById(“root”)).render(ce(App));
 </script>
+
 </body>
 </html>

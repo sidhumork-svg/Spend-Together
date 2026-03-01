@@ -12,14 +12,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 function App() {
-  var s1 = React.useState(0);       // number - WORKS
-  var s2 = React.useState("hello"); // string - ???
-  var s3 = React.useState(true);    // boolean - ???
+  var s1 = React.useState(0);
+  var s2 = React.useState(0);
 
 return React.createElement(‘div’, null,
-React.createElement(‘p’, null, “Number: “ + s1[0]),
-React.createElement(‘p’, null, “String: “ + s2[0]),
-React.createElement(‘p’, null, “Boolean: “ + s3[0])
+React.createElement(‘p’, null, “A: “ + s1[0]),
+React.createElement(‘p’, null, “B: “ + s2[0])
 );
 }
 ReactDOM.createRoot(document.getElementById(“root”)).render(React.createElement(App));

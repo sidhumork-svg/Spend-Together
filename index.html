@@ -13,37 +13,25 @@
 <script>
 var h = React.createElement;
 var useState = React.useState;
-var useEffect = React.useEffect;
-var useRef = React.useRef;
 
-// Test 1: Does useState with a function work?
 function App() {
-var s1 = useState(function(){ return [1,2,3]; });
+// NO function initializer - just plain values
+var s1 = useState([1,2,3]);
 var list = s1[0];
 
-// Test 2: Does useRef work?
-var ref1 = useRef({});
-
-// Test 3: Does useEffect work?
-useEffect(function(){
-ref1.current.ran = true;
-}, []);
-
-// Test 4: Does mapping work?
-var items = list.map(function(x) {
-return h(‘div’, {key:x, style:{color:“white”, fontSize:20}}, “Item “ + x);
-});
+var s2 = useState(“hello”);
+var text = s2[0];
 
 return h(‘div’, {style:{padding:20}},
-h(‘h1’, {style:{color:“white”}}, “Tests passing!”),
-h(‘div’, null, items)
+h(‘h1’, {style:{color:“white”, fontSize:24}}, “Works! “ + text),
+h(‘p’, {style:{color:“white”}}, “List length: “ + list.length)
 );
 }
 
 try {
 ReactDOM.createRoot(document.getElementById(“root”)).render(h(App));
 } catch(e) {
-document.body.innerHTML = ’<div style="color:yellow;padding:20px;font-size:16px;">CRASH: ’ + e.message + ‘<br>’ + e.stack + ‘</div>’;
+document.body.innerHTML = ’<div style="color:yellow;padding:20px;">CRASH: ’ + e.message + ‘</div>’;
 }
 </script>
 

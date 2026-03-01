@@ -11,9 +11,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
-// Test A: No useState at all
 function App() {
-  return React.createElement('h1', {style:{color:"white", padding:20}}, "WORKS - no useState");
+  var s = React.useState(0);
+  var count = s[0], setCount = s[1];
+  return React.createElement('div', {style:{padding:20}},
+    React.createElement('h1', {style:{color:"white"}}, "Count: " + count),
+    React.createElement('button', {onClick: function(){ setCount(count+1); }}, "Tap me")
+  );
 }
 try {
   ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));

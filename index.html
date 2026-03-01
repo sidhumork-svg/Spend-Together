@@ -4,36 +4,22 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Spend Together</title>
+  <title>Test</title>
 </head>
 <body style="background:red;">
 <div id="root"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
-var h = React.createElement;
-var useState = React.useState;
-
+// Test A: No useState at all
 function App() {
-// NO function initializer - just plain values
-var s1 = useState([1,2,3]);
-var list = s1[0];
-
-var s2 = useState(“hello”);
-var text = s2[0];
-
-return h(‘div’, {style:{padding:20}},
-h(‘h1’, {style:{color:“white”, fontSize:24}}, “Works! “ + text),
-h(‘p’, {style:{color:“white”}}, “List length: “ + list.length)
-);
+  return React.createElement('h1', {style:{color:"white", padding:20}}, "WORKS - no useState");
 }
-
 try {
-ReactDOM.createRoot(document.getElementById(“root”)).render(h(App));
+  ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
 } catch(e) {
-document.body.innerHTML = ’<div style="color:yellow;padding:20px;">CRASH: ’ + e.message + ‘</div>’;
+  document.body.innerHTML = '<p style="color:yellow;padding:20px;">ERROR: ' + e.message + '</p>';
 }
 </script>
-
 </body>
 </html>

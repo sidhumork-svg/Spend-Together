@@ -5,13 +5,18 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Debug</title>
-  <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
 </head>
-<body style="background:yellow;color:black;padding:20px;font-family:sans-serif;font-size:18px;">
-<h1>Hello!</h1>
-<div id="out">JS not running</div>
+<body style="background:yellow;color:black;padding:20px;font-family:sans-serif;font-size:16px;">
+<div id="log"></div>
 <script>
-document.getElementById('out').textContent = 'JS IS RUNNING ✅ - ' + new Date().toTimeString();
+function log(m,c){var d=document.createElement('div');d.style.cssText='color:'+(c||'black')+';margin:4px;padding:6px;background:#eee;border-radius:4px;';d.textContent=m;document.getElementById('log').appendChild(d);}
+log('✅ JS works');
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"
+  onload="log('✅ React loaded!')"
+  onerror="log('❌ React blocked','red')"></script>
+<script>
+log('After React tag - React defined: '+(typeof React !== 'undefined'));
 </script>
 </body>
 </html>

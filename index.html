@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Spend Together</title>
 </head>
-<body>
+<body style="background:red;">
 <div id="root"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -21,16 +21,11 @@ var count = s[0], setCount = s[1];
 return h(‘div’, {style:{
 position:“fixed”, top:0, left:0, right:0, bottom:0,
 background:”#141820”, color:“white”,
-display:“flex”, flexDirection:“column”,
-alignItems:“center”, justifyContent:“center”,
-fontFamily:“sans-serif”
+fontFamily:“sans-serif”, padding:“40px”
 }},
-h(‘h1’, {style:{color:”#52D9A4”, fontSize:32, marginBottom:20}}, “Spend Together”),
-h(‘p’, {style:{fontSize:18, marginBottom:20}}, “Count: “ + count),
-h(‘button’, {
-onClick: function(){ setCount(count+1); },
-style:{padding:“14px 28px”, background:”#52D9A4”, color:”#141820”, border:“none”, borderRadius:10, fontSize:16, fontWeight:800, cursor:“pointer”}
-}, “Tap me +1”)
+h(‘h1’, {style:{color:”#52D9A4”}}, “Spend Together”),
+h(‘p’, null, “Count: “ + count),
+h(‘button’, {onClick: function(){ setCount(count+1); }}, “Tap +1”)
 );
 }
 

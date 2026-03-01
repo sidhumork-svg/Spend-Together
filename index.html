@@ -5,15 +5,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Test</title>
-  <style>
-    body { background: #141820; font-family: sans-serif; color: white; padding: 20px; }
-    .nav { position: fixed; bottom: 0; left: 0; right: 0; background: #1A1F2E; display: flex; }
-    .nav button { flex: 1; border: none; background: none; padding: 12px; color: rgba(255,255,255,0.4); font-family: inherit; font-size: 12px; cursor: pointer; }
-    .nav button.active { color: #52D9A4; font-weight: 900; }
-    .page { padding-bottom: 80px; }
-  </style>
 </head>
-<body>
+<body style="background:#141820; color:white; padding:20px; font-family:sans-serif;">
 <div id="root"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -22,34 +15,20 @@ function App() {
   var s = React.useState("budget");
   var view = s[0], setView = s[1];
 
-var cats = [
-{id:“groceries”, name:“Groceries”, budget:600, spent:120},
-{id:“dining”, name:“Dining Out”, budget:300, spent:85},
-{id:“transport”, name:“Transport”, budget:200, spent:45}
-];
+var cats = [“Groceries”, “Dining”, “Transport”];
 
-return React.createElement(‘div’, {className:“page”},
-React.createElement(‘h1’, {style:{color:”#52D9A4”, marginBottom:20, fontSize:24}}, “Spend Together”),
-React.createElement(‘p’, {style:{marginBottom:20, color:“rgba(255,255,255,0.5)”}}, “View: “ + view),
+return React.createElement(‘div’, null,
+React.createElement(‘h1’, {style:{color:”#52D9A4”}}, “Spend Together”),
+React.createElement(‘p’, null, “View: “ + view),
+React.createElement(‘div’, null,
 cats.map(function(cat) {
-return React.createElement(‘div’, {
-key: cat.id,
-style:{background:“rgba(255,255,255,0.05)”, borderRadius:12, padding:16, marginBottom:10, border:“1px solid rgba(255,255,255,0.08)”}
-},
-React.createElement(‘div’, {style:{fontWeight:800}}, cat.name),
-React.createElement(‘div’, {style:{color:“rgba(255,255,255,0.4)”, fontSize:12, marginTop:4}}, “Spent $”+cat.spent+” of $”+cat.budget)
-);
-}),
-React.createElement(‘div’, {className:“nav”},
-[“Budget”,“Add”,“History”,“Manage”].map(function(tab) {
-var id = tab.toLowerCase();
-return React.createElement(‘button’, {
-key: id,
-className: view===id ? “active” : “”,
-onClick: function(){ setView(id); }
-}, tab);
+return React.createElement(‘div’, {key:cat, style:{padding:10, marginBottom:8, background:“rgba(255,255,255,0.05)”, borderRadius:8}}, cat);
 })
-)
+),
+React.createElement(‘button’, {
+onClick: function(){ setView(“add”); },
+style:{marginTop:16, padding:“10px 20px”, background:”#52D9A4”, color:“black”, border:“none”, borderRadius:8, cursor:“pointer”}
+}, “Switch view”)
 );
 }
 

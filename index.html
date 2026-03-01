@@ -19,19 +19,16 @@ var h = React.createElement;
 var useState = React.useState;
 
 function App() {
-var s = useState(“budget”);
-var view = s[0];
-var setView = s[1];
+var s = useState(0);
+var count = s[0], setCount = s[1];
 
-return h(‘div’, {
-style: { height: “100%”, background: “#141820”, color: “white”, padding: “20px”, fontFamily: “sans-serif” }
-},
-h(‘h1’, {style:{color:”#52D9A4”, marginBottom:16}}, “Spend Together”),
-h(‘p’, null, “It works! View: “ + view),
+return h(‘div’, {style:{padding:“40px”, fontFamily:“sans-serif”}},
+h(‘h1’, {style:{color:”#52D9A4”, fontSize:32, marginBottom:20}}, “Spend Together”),
+h(‘p’, {style:{color:“white”, fontSize:18, marginBottom:20}}, “Count: “ + count),
 h(‘button’, {
-onClick: function(){ setView(“add”); },
-style: {marginTop:16, padding:“10px 20px”, background:”#52D9A4”, border:“none”, borderRadius:8, cursor:“pointer”, fontWeight:800}
-}, “Tap me”)
+onClick: function(){ setCount(count+1); },
+style:{padding:“14px 28px”, background:”#52D9A4”, border:“none”, borderRadius:10, fontSize:16, fontWeight:800, cursor:“pointer”}
+}, “Tap me +1”)
 );
 }
 

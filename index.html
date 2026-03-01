@@ -6,12 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <title>Spend Together</title>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    html,body,#root{height:100%;background:#141820;overflow:hidden;}
-  </style>
 </head>
-<body>
+<body style="background:white;color:black;">
 <div id="root"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -21,39 +17,30 @@ var h=React.createElement,useState=React.useState;
 function App(){
 var s=useState(“budget”);
 var view=s[0],setView=s[1];
-var t={bg:”#141820”,tx:”#FFFFFF”,ac:”#52D9A4”,bgc:“rgba(255,255,255,0.04)”,bc:“rgba(255,255,255,0.06)”,tm:“rgba(255,255,255,0.35)”,bgn:”#1A1F2E”,bn:“rgba(255,255,255,0.07)”,tn:“rgba(255,255,255,0.28)”};
 
-return h(‘div’,{style:{background:t.bg,height:“100dvh”,display:“flex”,flexDirection:“column”,fontFamily:“sans-serif”,color:t.tx}},
-// Header
-h(‘div’,{style:{padding:“24px 20px 16px”,background:“rgba(255,255,255,0.03)”}},
-h(‘div’,{style:{fontSize:10,color:t.tm,letterSpacing:3,textTransform:“uppercase”,marginBottom:4}},“Our Budget”),
-h(‘div’,{style:{fontSize:24,fontWeight:900,color:t.ac}},“Spend Together ✓”)
+return h(‘div’,{style:{minHeight:“100vh”,display:“flex”,flexDirection:“column”,fontFamily:“sans-serif”,background:”#141820”,color:“white”}},
+h(‘div’,{style:{padding:20}},
+h(‘h1’,{style:{color:”#52D9A4”}},“✅ Spend Together”),
+h(‘p’,null,“Current view: “+view)
 ),
-// Content
-h(‘div’,{style:{flex:1,overflow:“auto”,padding:20}},
-h(‘div’,{style:{background:t.bgc,border:“1px solid “+t.bc,borderRadius:16,padding:20,marginBottom:12}},
-h(‘div’,{style:{fontSize:16,fontWeight:800,marginBottom:8}},“🛒 Groceries”),
-h(‘div’,{style:{fontSize:12,color:t.tm}},“Budget: $600”)
-),
-h(‘div’,{style:{background:t.bgc,border:“1px solid “+t.bc,borderRadius:16,padding:20,marginBottom:12}},
-h(‘div’,{style:{fontSize:16,fontWeight:800,marginBottom:8}},“🍽️ Dining Out”),
-h(‘div’,{style:{fontSize:12,color:t.tm}},“Budget: $300”)
-),
-h(‘div’,{style:{background:t.bgc,border:“1px solid “+t.bc,borderRadius:16,padding:20}},
-h(‘div’,{style:{fontSize:16,fontWeight:800,marginBottom:8}},“🚗 Transport”),
-h(‘div’,{style:{fontSize:12,color:t.tm}},“Budget: $200”)
+h(‘div’,{style:{flex:1,padding:20}},
+h(‘div’,{style:{background:“rgba(255,255,255,0.08)”,borderRadius:16,padding:20,marginBottom:12}},
+h(‘b’,null,“🛒 Groceries — $600”)
 )
 ),
-// Nav
-h(‘div’,{style:{background:t.bgn,borderTop:“1px solid “+t.bn,display:“flex”}},
-[‘📊 Budget’,‘➕ Add’,‘🕒 History’,‘⚙ Manage’].map(function(label,i){
-return h(‘button’,{key:i,onClick:function(){setView(i+””);},style:{flex:1,border:“none”,background:“none”,padding:“14px 0”,color:t.ac,fontFamily:“inherit”,fontSize:11,cursor:“pointer”}},label);
+h(‘div’,{style:{display:“flex”,borderTop:“1px solid rgba(255,255,255,0.1)”}},
+[‘Budget’,‘Add’,‘History’,‘Manage’].map(function(label){
+return h(‘button’,{key:label,onClick:function(){setView(label);},style:{flex:1,border:“none”,background:”#1A1F2E”,color:”#52D9A4”,padding:14,fontFamily:“inherit”,fontSize:12,cursor:“pointer”}},label);
 })
 )
 );
 }
 
+try {
 ReactDOM.createRoot(document.getElementById(“root”)).render(React.createElement(App));
+} catch(e) {
+document.body.innerHTML = ‘<div style="color:red;padding:20px;font-size:16px;">ERROR: ‘+e.message+’<br/>’+e.stack+’</div>’;
+}
 </script>
 
 </body>

@@ -4,53 +4,26 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Spend Together</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { background: #141820; }
-    .app { min-height: 100vh; display: flex; flex-direction: column; font-family: sans-serif; color: white; }
-    .content { flex: 1; padding: 16px; overflow-y: auto; }
-    .header { padding: 20px 16px 14px; background: #1D2330; }
-    .nav { background: #1A1F2E; border-top: 1px solid rgba(255,255,255,0.07); display: flex; }
-    .nav button { flex: 1; border: none; background: none; padding: 12px 0 10px; cursor: pointer; color: rgba(255,255,255,0.3); font-family: inherit; font-size: 11px; }
-    .nav button.active { color: #52D9A4; font-weight: 900; }
-    .card { background: rgba(255,255,255,0.04); border-radius: 16px; padding: 16px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.06); }
-  </style>
+  <title>Test</title>
 </head>
-<body>
+<body style="background:#141820;">
 <div id="root"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
-var h = React.createElement;
-
 function App() {
-var s = React.useState(“budget”);
-var view = s[0], setView = s[1];
-
-return h(‘div’, {className:“app”},
-h(‘div’, {className:“header”},
-h(‘div’, {style:{fontSize:10,color:“rgba(255,255,255,0.4)”,letterSpacing:3,textTransform:“uppercase”,marginBottom:4}}, “Our Budget”),
-h(‘div’, {style:{fontSize:22,fontWeight:700}}, “Spend Together”)
-),
-h(‘div’, {className:“content”},
-h(‘div’, {className:“card”},
-h(‘div’, {style:{fontWeight:800,fontSize:14,color:”#52D9A4”}}, “App is working! View: “ + view)
-),
-h(‘div’, {className:“card”}, h(‘div’, {style:{fontWeight:800}}, “Groceries - $600”)),
-h(‘div’, {className:“card”}, h(‘div’, {style:{fontWeight:800}}, “Dining Out - $300”))
-),
-h(‘div’, {className:“nav”},
-[“budget”,“add”,“history”,“manage”].map(function(tab) {
-return h(‘button’, {key:tab, className:view===tab?“active”:””, onClick:function(){ setView(tab); }},
-tab.charAt(0).toUpperCase()+tab.slice(1));
-})
-)
-);
+  var s = React.useState("budget");
+  var view = s[0], setView = s[1];
+  return React.createElement('div', {style:{color:"white", padding:40}},
+    React.createElement('h1', {style:{color:"#52D9A4", marginBottom:20}}, "Spend Together"),
+    React.createElement('p', null, "View: " + view),
+    React.createElement('button', {
+      onClick: function(){ setView("add"); },
+      style:{marginTop:20, padding:"10px 20px", background:"#52D9A4", color:"black", border:"none", borderRadius:8, fontSize:16, cursor:"pointer"}
+    }, "Switch to Add")
+  );
 }
-
-ReactDOM.createRoot(document.getElementById(“root”)).render(h(App));
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
 </script>
-
 </body>
 </html>

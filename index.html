@@ -3,36 +3,58 @@
 <html>
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Debug2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <title>Spend Together</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body,#root{height:100%;background:#141820;overflow:hidden;}
+  </style>
 </head>
-<body style="background:white;color:black;padding:20px;font-family:sans-serif;">
-  <div id="log"></div>
-  <script>
-    function log(msg,color){var d=document.createElement('div');d.style.cssText='color:'+(color||'black')+';margin-bottom:8px;padding:6px;background:#f0f0f0;border-radius:4px;font-size:14px;';d.textContent=msg;document.getElementById('log').appendChild(d);}
-    log('✅ Step 1: Page loaded');
-  </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"
-    onload="log('✅ Step 2: React loaded')"
-    onerror="log('❌ React failed','red')"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"
-    onload="log('✅ Step 3: ReactDOM loaded')"
-    onerror="log('❌ ReactDOM failed','red')"></script>
-  <script>
-    log('✅ Step 4: Inline script running');
-    try {
-      log('React version: ' + React.version);
-      log('✅ Step 5: React accessible');
-    } catch(e) { log('❌ React not accessible: '+e.message,'red'); }
-    try {
-      function App(){
-        var s=React.useState(0);
-        return React.createElement('div',{style:{color:'green',fontSize:18,fontWeight:'bold'}},'✅ Step 6: App rendered! Count='+s[0]);
-      }
-      var root=ReactDOM.createRoot(document.getElementById('log').appendChild(document.createElement('div')));
-      root.render(React.createElement(App));
-      log('✅ Step 7: Render called successfully');
-    } catch(e) { log('❌ Render error: '+e.message,'red'); log(e.stack,'red'); }
-  </script>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
+var h=React.createElement,useState=React.useState;
+
+function App(){
+var s=useState(“budget”);
+var view=s[0],setView=s[1];
+var t={bg:”#141820”,tx:”#FFFFFF”,ac:”#52D9A4”,bgc:“rgba(255,255,255,0.04)”,bc:“rgba(255,255,255,0.06)”,tm:“rgba(255,255,255,0.35)”,bgn:”#1A1F2E”,bn:“rgba(255,255,255,0.07)”,tn:“rgba(255,255,255,0.28)”};
+
+return h(‘div’,{style:{background:t.bg,height:“100dvh”,display:“flex”,flexDirection:“column”,fontFamily:“sans-serif”,color:t.tx}},
+// Header
+h(‘div’,{style:{padding:“24px 20px 16px”,background:“rgba(255,255,255,0.03)”}},
+h(‘div’,{style:{fontSize:10,color:t.tm,letterSpacing:3,textTransform:“uppercase”,marginBottom:4}},“Our Budget”),
+h(‘div’,{style:{fontSize:24,fontWeight:900,color:t.ac}},“Spend Together ✓”)
+),
+// Content
+h(‘div’,{style:{flex:1,overflow:“auto”,padding:20}},
+h(‘div’,{style:{background:t.bgc,border:“1px solid “+t.bc,borderRadius:16,padding:20,marginBottom:12}},
+h(‘div’,{style:{fontSize:16,fontWeight:800,marginBottom:8}},“🛒 Groceries”),
+h(‘div’,{style:{fontSize:12,color:t.tm}},“Budget: $600”)
+),
+h(‘div’,{style:{background:t.bgc,border:“1px solid “+t.bc,borderRadius:16,padding:20,marginBottom:12}},
+h(‘div’,{style:{fontSize:16,fontWeight:800,marginBottom:8}},“🍽️ Dining Out”),
+h(‘div’,{style:{fontSize:12,color:t.tm}},“Budget: $300”)
+),
+h(‘div’,{style:{background:t.bgc,border:“1px solid “+t.bc,borderRadius:16,padding:20}},
+h(‘div’,{style:{fontSize:16,fontWeight:800,marginBottom:8}},“🚗 Transport”),
+h(‘div’,{style:{fontSize:12,color:t.tm}},“Budget: $200”)
+)
+),
+// Nav
+h(‘div’,{style:{background:t.bgn,borderTop:“1px solid “+t.bn,display:“flex”}},
+[‘📊 Budget’,‘➕ Add’,‘🕒 History’,‘⚙ Manage’].map(function(label,i){
+return h(‘button’,{key:i,onClick:function(){setView(i+””);},style:{flex:1,border:“none”,background:“none”,padding:“14px 0”,color:t.ac,fontFamily:“inherit”,fontSize:11,cursor:“pointer”}},label);
+})
+)
+);
+}
+
+ReactDOM.createRoot(document.getElementById(“root”)).render(React.createElement(App));
+</script>
+
 </body>
 </html>

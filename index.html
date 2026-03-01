@@ -14,11 +14,11 @@
 function App() {
   var s1 = React.useState(0);
   var count = s1[0], setCount = s1[1];
-  var s2 = React.useState({name: "test"});
-  var obj = s2[0];
+  var s2 = React.useState(["a","b","c"]);
+  var arr = s2[0];
   return React.createElement('div', null,
     React.createElement('p', null, "Count: " + count),
-    React.createElement('p', null, "Object name: " + obj.name),
+    React.createElement('p', null, "Array: " + arr.join(", ")),
     React.createElement('button', {onClick: function(){ setCount(count+1); }, style:{padding:10, background:"#52D9A4", border:"none", borderRadius:8, cursor:"pointer"}}, "Tap +1")
   );
 }

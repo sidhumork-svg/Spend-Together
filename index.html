@@ -15,8 +15,11 @@ function App() {
   var s1 = React.useState(0);
   var count = s1[0], setCount = s1[1];
   var s2 = React.useState([
-    {id:"a", name:"One"},
-    {id:"b", name:"Two"}
+    {id:"a",name:"One",color:"#27AE82",budget:600},
+    {id:"b",name:"Two",color:"#E8703A",budget:300},
+    {id:"c",name:"Three",color:"#2E86C1",budget:200},
+    {id:"d",name:"Four",color:"#D4AC0D",budget:250},
+    {id:"e",name:"Five",color:"#8E44AD",budget:150}
   ]);
   var cats = s2[0];
   return React.createElement('div', null,

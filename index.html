@@ -11,18 +11,31 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
+var DCATS = [
+  {id:"groceries",name:"Groceries",emoji:"🛒",color:"#27AE82",budget:600},
+  {id:"dining",name:"Dining Out",emoji:"🍽",color:"#E8703A",budget:300},
+  {id:"transport",name:"Transport",emoji:"🚗",color:"#2E86C1",budget:200},
+  {id:"utilities",name:"Utilities",emoji:"⚡",color:"#D4AC0D",budget:250},
+  {id:"entertainment",name:"Entertainment",emoji:"🎬",color:"#8E44AD",budget:150},
+  {id:"shopping",name:"Shopping",emoji:"🛍",color:"#C0392B",budget:400},
+  {id:"health",name:"Health",emoji:"💊",color:"#16A085",budget:150},
+  {id:"savings",name:"Savings",emoji:"🏦",color:"#1E8449",budget:500}
+];
+
 function App() {
-  var s1 = React.useState(0);
-  var count = s1[0], setCount = s1[1];
-  var s2 = React.useState(["a","b","c"]);
-  var arr = s2[0];
-  return React.createElement('div', null,
-    React.createElement('p', null, "Count: " + count),
-    React.createElement('p', null, "Array: " + arr.join(", ")),
-    React.createElement('button', {onClick: function(){ setCount(count+1); }, style:{padding:10, background:"#52D9A4", border:"none", borderRadius:8, cursor:"pointer"}}, "Tap +1")
-  );
+var s1 = React.useState(0);
+var count = s1[0], setCount = s1[1];
+var s2 = React.useState(DCATS);
+var cats = s2[0];
+return React.createElement(‘div’, null,
+React.createElement(‘p’, null, “Count: “ + count),
+React.createElement(‘p’, null, “Cats: “ + cats.length),
+React.createElement(‘p’, null, “First: “ + cats[0].name),
+React.createElement(‘button’, {onClick: function(){ setCount(count+1); }, style:{padding:10, background:”#52D9A4”, border:“none”, borderRadius:8, cursor:“pointer”}}, “Tap +1”)
+);
 }
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+ReactDOM.createRoot(document.getElementById(“root”)).render(React.createElement(App));
 </script>
+
 </body>
 </html>

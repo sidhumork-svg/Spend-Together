@@ -12,31 +12,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
 function App() {
-  // ONE useState with everything inside
-  var s = React.useState({count1: 0, count2: 0, view: "budget"});
-  var state = s[0], setState = s[1];
-
-function update(patch) {
-setState(Object.assign({}, state, patch));
+  var s = React.useState(0);
+  var count = s[0], setCount = s[1];
+  return React.createElement('div', null,
+    React.createElement('p', null, "Count: " + count),
+    React.createElement('button', {onClick: function(){ setCount(count+1); }, style:{padding:10, background:"#52D9A4", border:"none", borderRadius:8, cursor:"pointer"}}, "Tap +1")
+  );
 }
-
-return React.createElement(‘div’, null,
-React.createElement(‘h1’, {style:{color:”#52D9A4”}}, “Spend Together”),
-React.createElement(‘p’, null, “Count1: “ + state.count1),
-React.createElement(‘p’, null, “Count2: “ + state.count2),
-React.createElement(‘p’, null, “View: “ + state.view),
-React.createElement(‘button’, {
-onClick: function(){ update({count1: state.count1+1}); },
-style:{marginTop:16, padding:“10px 20px”, background:”#52D9A4”, color:“black”, border:“none”, borderRadius:8, cursor:“pointer”, marginRight:8}
-}, “Count1 +1”),
-React.createElement(‘button’, {
-onClick: function(){ update({view: state.view===“budget”?“add”:“budget”}); },
-style:{marginTop:16, padding:“10px 20px”, background:”#E8703A”, color:“white”, border:“none”, borderRadius:8, cursor:“pointer”}
-}, “Toggle view”)
-);
-}
-ReactDOM.createRoot(document.getElementById(“root”)).render(React.createElement(App));
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
 </script>
-
 </body>
 </html>

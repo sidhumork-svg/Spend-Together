@@ -163,9 +163,9 @@ if(S.duration===“Weekly”)return getWeekRange(S.period.week,S.period.year);
 return String(S.period.year);
 }
 function shiftPeriod(dir){
-if(S.duration===“Monthly”){var m=S.period.month+dir,y=S.period.year;if(m<0){m=11;y–;}if(m>11){m=0;y++;}S.period.month=m;S.period.year=y;}
-else if(S.duration===“Weekly”){var w=S.period.week+dir,y2=S.period.year;if(w<1){y2–;w=totalWeeksInYear(y2);}else if(w>totalWeeksInYear(y2)){y2++;w=1;}S.period.week=w;S.period.year=y2;}
-else{S.period.year+=dir;}
+if(S.duration===“Monthly”){var m=S.period.month+dir,y=S.period.year;if(m<0){m=11;y=y-1;}if(m>11){m=0;y=y+1;}S.period.month=m;S.period.year=y;}
+else if(S.duration===“Weekly”){var w=S.period.week+dir,y2=S.period.year;if(w<1){y2=y2-1;w=totalWeeksInYear(y2);}else if(w>totalWeeksInYear(y2)){y2=y2+1;w=1;}S.period.week=w;S.period.year=y2;}
+else{S.period.year=S.period.year+dir;}
 render();
 }
 function inPeriod(exp){

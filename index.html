@@ -2,57 +2,294 @@
 
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-title" content="Spend Together"/>
-  <meta name="theme-color" content="#141820"/>
-  <title>Spend Together</title>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet"/>
-  <style>
-    body { margin:0; padding:0; background:#141820; font-family:'Nunito',sans-serif; color:white; }
-    .page { padding: 0 0 80px 0; }
-    .nav { position:fixed; bottom:0; left:0; right:0; background:#1A1F2E; border-top:1px solid rgba(255,255,255,0.07); display:flex; }
-    .nav button { flex:1; border:none; background:none; padding:12px 0 10px; cursor:pointer; color:rgba(255,255,255,0.3); font-family:inherit; font-size:11px; font-weight:600; }
-    .nav button.on { color:#52D9A4; font-weight:900; }
-    .card { background:rgba(255,255,255,0.04); border-radius:16px; padding:14px 16px; margin:0 16px 10px; border:1px solid rgba(255,255,255,0.06); }
-    input { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:12px 14px; color:white; font-size:15px; font-weight:700; outline:none; width:100%; display:block; font-family:'Nunito',sans-serif; margin-bottom:12px; }
-    .btn { width:100%; padding:15px; background:linear-gradient(135deg,#52D9A4,#3BBFAD); color:#141820; border:none; border-radius:14px; font-size:16px; font-family:'Nunito',sans-serif; font-weight:900; cursor:pointer; margin-bottom:10px; }
-    .btn2 { width:100%; padding:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); border-radius:14px; font-size:14px; font-family:'Nunito',sans-serif; cursor:pointer; color:rgba(255,255,255,0.4); }
-    .bar-bg { height:8px; background:rgba(255,255,255,0.07); border-radius:99px; overflow:hidden; }
-    .bar-fg { height:100%; border-radius:99px; }
-    .scroll-x { display:flex; gap:8px; overflow-x:auto; padding:0 16px 8px; -webkit-overflow-scrolling:touch; }
-    .scroll-x::-webkit-scrollbar { display:none; }
-    .toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:#52D9A4; color:#141820; padding:10px 22px; border-radius:99px; font-size:14px; font-weight:800; z-index:999; white-space:nowrap; }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="Spend Together"/>
+<title>Spend Together</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#141820;color:#fff;font-family:'Nunito',sans-serif;min-height:100vh;}
+.page{padding-bottom:80px;}
+.hdr{background:#1D2330;padding:20px 16px 14px;position:sticky;top:0;z-index:10;}
+.nav{position:fixed;bottom:0;left:0;right:0;background:#1A1F2E;border-top:1px solid rgba(255,255,255,0.07);display:flex;z-index:20;}
+.nb{flex:1;border:none;background:none;padding:12px 0 10px;cursor:pointer;color:rgba(255,255,255,0.3);font-family:inherit;font-size:11px;font-weight:600;}
+.nb.on{color:#52D9A4;font-weight:900;}
+.card{background:rgba(255,255,255,0.04);border-radius:16px;padding:14px 16px;margin:0 16px 10px;border:1px solid rgba(255,255,255,0.06);}
+input,select{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px 14px;color:#fff;font-size:15px;font-weight:700;outline:none;width:100%;display:block;font-family:'Nunito',sans-serif;margin-bottom:12px;}
+.btn{width:100%;padding:15px;background:linear-gradient(135deg,#52D9A4,#3BBFAD);color:#141820;border:none;border-radius:14px;font-size:16px;font-family:'Nunito',sans-serif;font-weight:900;cursor:pointer;margin-bottom:10px;display:block;}
+.btn2{width:100%;padding:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:14px;font-size:14px;font-family:'Nunito',sans-serif;cursor:pointer;color:rgba(255,255,255,0.4);display:block;}
+.scrollx{display:flex;gap:8px;overflow-x:auto;padding:0 16px 8px;-webkit-overflow-scrolling:touch;}
+.scrollx::-webkit-scrollbar{display:none;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#52D9A4;color:#141820;padding:10px 22px;border-radius:99px;font-size:14px;font-weight:800;z-index:999;white-space:nowrap;}
+</style>
 </head>
 <body>
 <div id="root"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
-// VERSION 42
-var ce = React.createElement;
-var CATS = [
-  {id:"groceries",name:"Groceries",emoji:"G",color:"#27AE82",budget:600},
-  {id:"dining",name:"Dining Out",emoji:"D",color:"#E8703A",budget:300},
-  {id:"transport",name:"Transport",emoji:"T",color:"#2E86C1",budget:200},
-  {id:"utilities",name:"Utilities",emoji:"U",color:"#D4AC0D",budget:250},
-  {id:"entertainment",name:"Entertainment",emoji:"E",color:"#8E44AD",budget:150},
-  {id:"shopping",name:"Shopping",emoji:"S",color:"#C0392B",budget:400},
-  {id:"health",name:"Health",emoji:"H",color:"#16A085",budget:150},
-  {id:"savings",name:"Savings",emoji:"$",color:"#1E8449",budget:500}
+var ce=React.createElement;
+var MONS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var DCATS=[
+  {id:"groceries",name:"Groceries",emoji:"🛒",color:"#27AE82",budget:600},
+  {id:"dining",name:"Dining Out",emoji:"🍽️",color:"#E8703A",budget:300},
+  {id:"transport",name:"Transport",emoji:"🚗",color:"#2E86C1",budget:200},
+  {id:"utilities",name:"Utilities",emoji:"⚡",color:"#D4AC0D",budget:250},
+  {id:"entertainment",name:"Entertainment",emoji:"🎬",color:"#8E44AD",budget:150},
+  {id:"shopping",name:"Shopping",emoji:"🛍️",color:"#C0392B",budget:400},
+  {id:"health",name:"Health",emoji:"💊",color:"#16A085",budget:150},
+  {id:"savings",name:"Savings",emoji:"🏦",color:"#1E8449",budget:500}
 ];
-function fmt(n){return "$"+Math.round(n);}
-function fmtD(n){return "$"+n.toFixed(2);}
+function fmt(n){return"$"+Math.round(n);}
+function fmtD(n){return"$"+Number(n).toFixed(2);}
 function lsG(k,f){try{var v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}}
 function lsS(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 
-function App() {
-var s1=React.useState(lsG(“cats42”,CATS)), cats=s1[0], setCats=s1[1];
-var s2=React.useState(lsG(“exps42”,[])), exps=s2[0], setExps=s2[1];
+// Global state to avoid multiple useState
+var _state={
+cats:lsG(“st_cats”,DCATS),
+exps:lsG(“st_exps”,[]),
+income:lsG(“st_inc”,0),
+view:“budget”,
+month:new Date().getMonth(),
+year:new Date().getFullYear(),
+addForm:{catId:””,amount:””,note:””,date:new Date().toISOString().split(“T”)[0]},
+editCat:null,
+newCat:{name:””,emoji:””,budget:””,color:”#27AE82”},
+showInc:false,
+incEdit:””,
+toast:null,
+editCatId:null
+};
+var _listeners=[];
+function getState(){return _state;}
+function setState(patch){_state=Object.assign({},_state,patch);_listeners.forEach(function(fn){fn();});}
+function subscribe(fn){_listeners.push(fn);return function(){_listeners=_listeners.filter(function(f){return f!==fn;});};}
+function savCats(c){setState({cats:c});lsS(“st_cats”,c);}
+function savExps(e){setState({exps:e});lsS(“st_exps”,e);}
+function savInc(v){setState({income:v});lsS(“st_inc”,v);}
+function showToast(m){setState({toast:m});setTimeout(function(){setState({toast:null});},2000);}
 
-return ce(‘div’, null, ce(‘p’, {style:{color:”#52D9A4”,padding:20}}, “VERSION 42 - cats:”+cats.length+” exps:”+exps.length));
+function useStore(){
+var s=React.useState(0);
+var tick=s[1];
+React.useEffect(function(){return subscribe(function(){tick(function(n){return n+1;});});}, []);
+return getState();
+}
+
+function Ring(p){
+var sp=p.spent,to=p.total,sz=120;
+var pct=to>0?Math.min(sp/to,1):0,r=sz*0.42,cx=sz/2,cy=sz/2,ci=2*Math.PI*r;
+var col=pct>=1?”#FF5252”:pct>=0.85?”#FFB74D”:”#52D9A4”;
+return ce(‘svg’,{width:sz,height:sz},
+ce(‘circle’,{cx:cx,cy:cy,r:r,fill:“none”,stroke:“rgba(255,255,255,0.07)”,strokeWidth:10}),
+ce(‘circle’,{cx:cx,cy:cy,r:r,fill:“none”,stroke:col,strokeWidth:10,strokeDasharray:(pct*ci)+” “+ci,strokeLinecap:“round”,transform:“rotate(-90 “+cx+” “+cy+”)”}),
+ce(‘text’,{x:cx,y:cy-8,textAnchor:“middle”,fill:”#fff”,fontSize:13,fontWeight:800,fontFamily:“Nunito,sans-serif”},fmt(sp)),
+ce(‘text’,{x:cx,y:cy+8,textAnchor:“middle”,fill:“rgba(255,255,255,0.4)”,fontSize:11,fontFamily:“Nunito,sans-serif”},“of “+fmt(to)),
+ce(‘text’,{x:cx,y:cy+24,textAnchor:“middle”,fill:col,fontSize:11,fontWeight:800,fontFamily:“Nunito,sans-serif”},Math.round(pct*100)+”%”)
+);
+}
+
+function BudgetPage(){
+var st=useStore();
+var pExps=st.exps.filter(function(e){var d=new Date(e.date+“T12:00:00”);return d.getMonth()===st.month&&d.getFullYear()===st.year;});
+function spentFor(id){return pExps.filter(function(e){return e.catId===id;}).reduce(function(s,e){return s+e.amount;},0);}
+var totB=st.cats.reduce(function(s,c){return s+c.budget;},0);
+var totS=st.cats.reduce(function(s,c){return s+spentFor(c.id);},0);
+var inc=st.income||0;
+
+return ce(‘div’,{className:“page”},
+ce(‘div’,{className:“hdr”},
+ce(‘div’,{style:{display:“flex”,justifyContent:“space-between”,alignItems:“center”,marginBottom:10}},
+ce(‘div’,null,
+ce(‘div’,{style:{fontSize:10,color:“rgba(255,255,255,0.4)”,letterSpacing:3,textTransform:“uppercase”,marginBottom:2}},“Our Budget”),
+ce(‘div’,{style:{fontFamily:”‘Playfair Display’,serif”,fontSize:22,fontWeight:700}},“Spend Together”)
+),
+ce(‘div’,{style:{display:“flex”,gap:8,alignItems:“center”}},
+ce(‘button’,{onClick:function(){setState({showInc:!st.showInc,incEdit:st.income>0?String(st.income):””});},style:{background:“rgba(82,217,164,0.15)”,border:“1px solid rgba(82,217,164,0.3)”,borderRadius:20,padding:“5px 12px”,cursor:“pointer”,color:”#52D9A4”,fontFamily:“inherit”,fontSize:12,fontWeight:800}},inc>0?fmtD(inc)+” /mo”:”+ Income”)
+)
+),
+ce(‘div’,{style:{display:“flex”,alignItems:“center”,justifyContent:“space-between”,background:“rgba(255,255,255,0.06)”,borderRadius:12,padding:“6px 4px”}},
+ce(‘button’,{onClick:function(){var m=st.month-1,y=st.year;if(m<0){m=11;y–;}setState({month:m,year:y});},style:{background:“none”,border:“none”,color:“rgba(255,255,255,0.4)”,fontSize:20,cursor:“pointer”,padding:“0 12px”}},”‹”),
+ce(‘span’,{style:{fontWeight:800,fontSize:14}},MONS[st.month]+” “+st.year),
+ce(‘button’,{onClick:function(){var m=st.month+1,y=st.year;if(m>11){m=0;y++;}setState({month:m,year:y});},style:{background:“none”,border:“none”,color:“rgba(255,255,255,0.4)”,fontSize:20,cursor:“pointer”,padding:“0 12px”}},”›”)
+)
+),
+st.showInc&&ce(‘div’,{style:{margin:“10px 16px”,background:“rgba(255,255,255,0.04)”,borderRadius:16,padding:16,border:“1px solid rgba(82,217,164,0.3)”}},
+ce(‘div’,{style:{fontSize:11,color:“rgba(255,255,255,0.4)”,fontWeight:700,textTransform:“uppercase”,marginBottom:8}},“Monthly Income”),
+ce(‘input’,{type:“number”,inputMode:“decimal”,placeholder:“e.g. 5000”,value:st.incEdit,onChange:function(e){setState({incEdit:e.target.value});},style:{fontSize:24,fontWeight:900,textAlign:“center”,color:”#52D9A4”}}),
+ce(‘button’,{className:“btn”,onClick:function(){var v=parseFloat(st.incEdit)||0;savInc(v);setState({showInc:false});showToast(“Saved!”);}}, “Save Income”),
+ce(‘button’,{className:“btn2”,onClick:function(){setState({showInc:false});}}, “Cancel”)
+),
+ce(‘div’,{style:{margin:“10px 16px”,background:“rgba(255,255,255,0.04)”,borderRadius:20,padding:“16px”,border:“1px solid rgba(255,255,255,0.06)”,display:“flex”,alignItems:“center”,gap:16}},
+ce(Ring,{spent:totS,total:inc>0?inc:totB}),
+ce(‘div’,null,
+inc>0&&ce(‘div’,{style:{display:“flex”,justifyContent:“space-between”,gap:20,marginBottom:5}},ce(‘span’,{style:{fontSize:11,color:“rgba(255,255,255,0.4)”}},“Income”),ce(‘span’,{style:{fontSize:13,fontWeight:700,color:”#52D9A4”}},fmtD(inc))),
+ce(‘div’,{style:{display:“flex”,justifyContent:“space-between”,gap:20,marginBottom:5}},ce(‘span’,{style:{fontSize:11,color:“rgba(255,255,255,0.4)”}},“Budgeted”),ce(‘span’,{style:{fontSize:13,fontWeight:700}},fmt(totB))),
+ce(‘div’,{style:{display:“flex”,justifyContent:“space-between”,gap:20,marginBottom:5}},ce(‘span’,{style:{fontSize:11,color:“rgba(255,255,255,0.4)”}},“Spent”),ce(‘span’,{style:{fontSize:16,fontWeight:900,color:”#52D9A4”}},fmtD(totS))),
+ce(‘div’,{style:{display:“flex”,justifyContent:“space-between”,gap:20}},ce(‘span’,{style:{fontSize:11,color:“rgba(255,255,255,0.4)”}},“Left”),ce(‘span’,{style:{fontSize:13,fontWeight:700,color:totB-totS<0?”#FF5252”:”#FFD54F”}},fmtD(totB-totS))),
+inc>0&&ce(‘div’,{style:{display:“flex”,justifyContent:“space-between”,gap:20,marginTop:5}},ce(‘span’,{style:{fontSize:11,color:“rgba(255,255,255,0.4)”}},“Savings”),ce(‘span’,{style:{fontSize:13,fontWeight:700,color:inc-totS>=0?”#52D9A4”:”#FF5252”}},fmtD(inc-totS)))
+)
+),
+st.cats.map(function(cat){
+var spent=spentFor(cat.id),pct=cat.budget>0?spent/cat.budget:0,over=pct>=1,near=pct>=0.85&&!over;
+var col=over?”#FF5252”:near?”#FFB74D”:cat.color;
+return ce(‘div’,{key:cat.id,className:“card”,onClick:function(){setState({view:“add”,addForm:{catId:cat.id,amount:””,note:””,date:new Date().toISOString().split(“T”)[0]}});},style:{cursor:“pointer”,borderColor:over?“rgba(255,82,82,0.3)”:near?“rgba(255,183,77,0.2)”:“rgba(255,255,255,0.06)”}},
+ce(‘div’,{style:{display:“flex”,justifyContent:“space-between”,alignItems:“center”,marginBottom:10}},
+ce(‘div’,{style:{display:“flex”,alignItems:“center”,gap:10}},
+ce(‘div’,{style:{width:36,height:36,borderRadius:10,background:cat.color+“22”,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:18}},cat.emoji),
+ce(‘div’,null,
+ce(‘div’,{style:{fontWeight:800,fontSize:14}},cat.name),
+ce(‘div’,{style:{fontSize:11,color:“rgba(255,255,255,0.4)”}},“Budget: “+fmt(cat.budget))
+)
+),
+ce(‘div’,{style:{textAlign:“right”}},
+ce(‘div’,{style:{fontWeight:900,fontSize:16,color:col}},fmtD(spent)),
+ce(‘div’,{style:{fontSize:11,color:over?”#FF5252”:near?”#FFB74D”:“rgba(255,255,255,0.2)”}},over?”+”+fmtD(spent-cat.budget)+” over”:fmt(cat.budget-spent)+” left”)
+)
+),
+ce(‘div’,{style:{height:8,background:“rgba(255,255,255,0.07)”,borderRadius:99,overflow:“hidden”}},
+ce(‘div’,{style:{height:“100%”,width:(Math.min(pct,1)*100)+”%”,background:col,borderRadius:99}})
+)
+);
+})
+);
+}
+
+function AddPage(){
+var st=useStore();
+var af=st.addForm;
+var selCat=st.cats.find(function(c){return c.id===af.catId;});
+var canSave=af.catId&&af.amount&&!isNaN(parseFloat(af.amount));
+function upd(patch){setState({addForm:Object.assign({},af,patch)});}
+function doAdd(){
+if(!canSave)return;
+var newExp={id:Date.now(),catId:af.catId,amount:parseFloat(af.amount),note:af.note.trim(),date:af.date};
+savExps([newExp].concat(st.exps));
+setState({view:“budget”,addForm:{catId:””,amount:””,note:””,date:new Date().toISOString().split(“T”)[0]}});
+showToast(“Expense saved!”);
+}
+return ce(‘div’,{className:“page”,style:{padding:“20px 16px”}},
+ce(‘div’,{style:{fontFamily:”‘Playfair Display’,serif”,fontSize:22,fontWeight:700,marginBottom:16}},“Add Expense”),
+ce(‘div’,{style:{background:“rgba(255,255,255,0.04)”,borderRadius:18,padding:“14px 16px”,marginBottom:16,border:“1px solid “+(selCat?selCat.color+“44”:“rgba(255,255,255,0.06)”)}},
+ce(‘div’,{style:{fontSize:10,color:“rgba(255,255,255,0.4)”,fontWeight:700,textTransform:“uppercase”,marginBottom:4}},selCat?selCat.name:“Select category below”),
+ce(‘input’,{type:“number”,inputMode:“decimal”,placeholder:“0.00”,value:af.amount,onChange:function(e){upd({amount:e.target.value});},style:{fontSize:36,fontWeight:900,color:”#52D9A4”,background:“transparent”,border:“none”,padding:0,marginBottom:0,outline:“none”,width:“100%”}})
+),
+ce(‘div’,{style:{marginBottom:14}},
+ce(‘div’,{style:{fontSize:10,color:“rgba(255,255,255,0.4)”,fontWeight:700,textTransform:“uppercase”,marginBottom:8}},“Category”),
+ce(‘div’,{className:“scrollx”},
+st.cats.map(function(cat){
+var sel=af.catId===cat.id;
+return ce(‘button’,{key:cat.id,onClick:function(){upd({catId:cat.id});},style:{flexShrink:0,display:“flex”,alignItems:“center”,gap:6,border:“2px solid “+(sel?cat.color:“rgba(255,255,255,0.1)”),background:sel?cat.color+“22”:“rgba(255,255,255,0.04)”,borderRadius:14,padding:“8px 12px”,cursor:“pointer”,fontFamily:“inherit”,color:sel?cat.color:“rgba(255,255,255,0.5)”,fontWeight:800,fontSize:13}},
+ce(‘span’,null,cat.emoji),ce(‘span’,null,cat.name)
+);
+})
+)
+),
+ce(‘input’,{type:“text”,placeholder:“Note (optional)”,value:af.note,onChange:function(e){upd({note:e.target.value});}}),
+ce(‘input’,{type:“date”,value:af.date,onChange:function(e){upd({date:e.target.value});},style:{colorScheme:“dark”}}),
+ce(‘button’,{className:“btn”,onClick:doAdd,style:{opacity:canSave?1:0.4}},“Save Expense”),
+ce(‘button’,{className:“btn2”,onClick:function(){setState({view:“budget”});}}, “Cancel”)
+);
+}
+
+function HistoryPage(){
+var st=useStore();
+var pExps=st.exps.filter(function(e){var d=new Date(e.date+“T12:00:00”);return d.getMonth()===st.month&&d.getFullYear()===st.year;});
+return ce(‘div’,{className:“page”,style:{padding:“20px 16px 80px”}},
+ce(‘div’,{style:{fontFamily:”‘Playfair Display’,serif”,fontSize:22,fontWeight:700,marginBottom:16}},“History”),
+pExps.length===0
+?ce(‘div’,{style:{textAlign:“center”,padding:“60px 0”,color:“rgba(255,255,255,0.3)”}},“No expenses this month”)
+:pExps.map(function(exp){
+var cat=st.cats.find(function(c){return c.id===exp.catId;});
+return ce(‘div’,{key:exp.id,className:“card”,style:{display:“flex”,alignItems:“center”,gap:12}},
+ce(‘div’,{style:{width:36,height:36,borderRadius:10,background:(cat&&cat.color||”#888”)+“22”,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:18,flexShrink:0}},cat&&cat.emoji||”?”),
+ce(‘div’,{style:{flex:1,minWidth:0}},
+ce(‘div’,{style:{fontWeight:800,fontSize:14,overflow:“hidden”,textOverflow:“ellipsis”,whiteSpace:“nowrap”}},exp.note||(cat&&cat.name)||“Expense”),
+ce(‘div’,{style:{fontSize:11,color:“rgba(255,255,255,0.4)”,marginTop:2}},(cat&&cat.name||””)+” · “+new Date(exp.date+“T12:00:00”).toLocaleDateString(“en-US”,{month:“short”,day:“numeric”}))
+),
+ce(‘span’,{style:{fontWeight:900,fontSize:15,color:(cat&&cat.color)||”#52D9A4”,flexShrink:0}},fmtD(exp.amount)),
+ce(‘button’,{onClick:function(){savExps(st.exps.filter(function(e){return e.id!==exp.id;}));showToast(“Deleted”);},style:{background:“rgba(255,82,82,0.15)”,border:“none”,borderRadius:8,padding:“5px 9px”,color:”#FF5252”,cursor:“pointer”,fontSize:13,flexShrink:0,fontFamily:“inherit”}},“✕”)
+);
+})
+);
+}
+
+function ManagePage(){
+var st=useStore();
+var nc=st.newCat;
+function doSaveEdit(cat){
+if(!cat.name.trim()||!cat.budget)return;
+savCats(st.cats.map(function(c){return c.id===cat.id?Object.assign({},cat,{budget:parseFloat(cat.budget)}):c;}));
+setState({editCatId:null});
+showToast(“Saved!”);
+}
+function doAddCat(){
+var name=nc.name.trim(),budget=parseFloat(nc.budget);
+if(!name||!budget){showToast(“Fill name & budget”);return;}
+savCats(st.cats.concat([{id:“c”+Date.now(),name:name,emoji:nc.emoji||”*”,color:nc.color,budget:budget}]));
+setState({newCat:{name:””,emoji:””,budget:””,color:”#27AE82”}});
+showToast(“Added!”);
+}
+return ce(‘div’,{className:“page”,style:{padding:“20px 0 80px”}},
+ce(‘div’,{style:{fontFamily:”‘Playfair Display’,serif”,fontSize:22,fontWeight:700,margin:“0 16px 16px”}},“Manage”),
+st.cats.map(function(cat){
+var editing=st.editCatId===cat.id;
+var ec=st.editCat||cat;
+return ce(‘div’,{key:cat.id,className:“card”},
+editing
+?ce(‘div’,null,
+ce(‘div’,{style:{display:“flex”,gap:8}},
+ce(‘input’,{value:ec.emoji,onChange:function(e){setState({editCat:Object.assign({},ec,{emoji:e.target.value})});},style:{width:52,textAlign:“center”,fontSize:20,padding:8,marginBottom:10},maxLength:2}),
+ce(‘input’,{value:ec.name,onChange:function(e){setState({editCat:Object.assign({},ec,{name:e.target.value})});},placeholder:“Name”,style:{flex:1,marginBottom:10}})
+),
+ce(‘input’,{type:“number”,value:ec.budget,onChange:function(e){setState({editCat:Object.assign({},ec,{budget:e.target.value})});},placeholder:“Budget ($)”}),
+ce(‘div’,{style:{display:“flex”,gap:8}},
+ce(‘button’,{className:“btn”,onClick:function(){doSaveEdit(ec);},style:{marginBottom:0}},“Save”),
+ce(‘button’,{className:“btn2”,onClick:function(){setState({editCatId:null,editCat:null});}}, “Cancel”)
+)
+)
+:ce(‘div’,{style:{display:“flex”,alignItems:“center”,gap:10}},
+ce(‘div’,{style:{width:36,height:36,borderRadius:10,background:cat.color+“22”,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:18,flexShrink:0}},cat.emoji),
+ce(‘div’,{style:{flex:1}},
+ce(‘div’,{style:{fontWeight:800,fontSize:14}},cat.name),
+ce(‘div’,{style:{fontSize:12,color:“rgba(255,255,255,0.4)”}},fmt(cat.budget))
+),
+ce(‘button’,{onClick:function(){setState({editCatId:cat.id,editCat:Object.assign({},cat)});},style:{background:“rgba(255,255,255,0.06)”,border:“1px solid rgba(255,255,255,0.1)”,borderRadius:8,padding:“6px 12px”,color:“rgba(255,255,255,0.6)”,cursor:“pointer”,fontSize:12,fontFamily:“inherit”,fontWeight:800,marginRight:6}},“Edit”),
+ce(‘button’,{onClick:function(){savCats(st.cats.filter(function(c){return c.id!==cat.id;}));},style:{background:“rgba(255,82,82,0.15)”,border:“none”,borderRadius:8,padding:“6px 10px”,color:”#FF5252”,cursor:“pointer”,fontSize:14}},“✕”)
+)
+);
+}),
+ce(‘div’,{className:“card”,style:{border:“1px dashed rgba(255,255,255,0.12)”,marginTop:4}},
+ce(‘div’,{style:{fontSize:12,color:“rgba(255,255,255,0.4)”,fontWeight:800,textTransform:“uppercase”,marginBottom:12}},”+ New Category”),
+ce(‘div’,{style:{display:“flex”,gap:8}},
+ce(‘input’,{value:nc.emoji,onChange:function(e){setState({newCat:Object.assign({},nc,{emoji:e.target.value})});},style:{width:52,textAlign:“center”,fontSize:20,padding:8,marginBottom:10},maxLength:2,placeholder:“🎯”}),
+ce(‘input’,{value:nc.name,onChange:function(e){setState({newCat:Object.assign({},nc,{name:e.target.value})});},placeholder:“Category name”,style:{flex:1,marginBottom:10}})
+),
+ce(‘input’,{type:“number”,value:nc.budget,onChange:function(e){setState({newCat:Object.assign({},nc,{budget:e.target.value})});},placeholder:“Budget ($)”}),
+ce(‘button’,{className:“btn”,onClick:doAddCat,style:{marginBottom:0}},“Add Category”)
+)
+);
+}
+
+function App(){
+var st=useStore();
+var pages={budget:BudgetPage,add:AddPage,history:HistoryPage,manage:ManagePage};
+var Page=pages[st.view]||BudgetPage;
+return ce(‘div’,null,
+st.toast&&ce(‘div’,{className:“toast”},st.toast),
+ce(Page,null),
+ce(‘div’,{className:“nav”},
+[{id:“budget”,icon:“📊”,label:“Budget”},{id:“add”,icon:”+”,label:“Add”},{id:“history”,icon:“🕒”,label:“History”},{id:“manage”,icon:“⚙️”,label:“Manage”}].map(function(tab){
+return ce(‘button’,{key:tab.id,className:“nb”+(st.view===tab.id?” on”:””),onClick:function(){setState({view:tab.id});}},
+ce(‘div’,{style:{fontSize:tab.id===“add”?22:18}},tab.icon),
+ce(‘div’,{style:{fontSize:10,marginTop:2}},tab.label)
+);
+})
+)
+);
 }
 
 ReactDOM.createRoot(document.getElementById(“root”)).render(ce(App));

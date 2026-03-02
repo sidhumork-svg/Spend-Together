@@ -84,9 +84,10 @@ var S={
 };
 
 var fbSet=null,fbCatsRef=null,fbExpsRef=null;
+var fbIncRef=null;
 function savCats(c){S.cats=c;lsS(LS_CATS,c);if(fbSet&&fbCatsRef){try{fbSet(fbCatsRef,c);}catch(e){}}}
 function savExps(e){S.exps=e;lsS(LS_EXPS,e);if(fbSet&&fbExpsRef){try{fbSet(fbExpsRef,e);}catch(e){}}}
-function savIncome(v){S.income=v;lsS(LS_INCOME,v);}
+function savIncome(v){S.income=v;lsS(LS_INCOME,v);if(fbSet&&fbIncRef){try{fbSet(fbIncRef,v);}catch(e){}}}
 function savTheme(v){S.themeMode=v;lsS(LS_THEME,v);}
 
 function showToast(msg){
@@ -187,9 +188,10 @@ function makeSVGRing(spent,total,t,size){
   var r=size*0.42,cx=size/2,cy=size/2,circ=2*Math.PI*r;
   var fc=pct>=1?t.over:pct>=0.85?t.near:t.accent;
   var fs=size<110?11:15;
+  var da=(pct*circ)+" "+circ;
   return "<svg width="+size+" height="+size+" style='display:block;flex-shrink:0'>"
     +"<circle cx="+cx+" cy="+cy+" r="+r+" fill=none stroke='"+t.fillBg+"' stroke-width="+(size*0.078)+"/>"
-    +"<circle cx="+cx+" cy="+cy+" r="+r+" fill=none stroke='"+fc+"' stroke-width="+(size*0.078)+" stroke-dasharray='"+(pct*circ)+" "+circ+"' stroke-linecap=round transform='rotate(-90 "+cx+" "+cy+")'></circle>"
+    +"<circle cx="+cx+" cy="+cy+" r="+r+" fill=none stroke='"+fc+"' stroke-width="+(size*0.078)+" stroke-dasharray='"+da+"' stroke-linecap=round transform='rotate(-90 "+cx+" "+cy+")'></circle>"
     +"<text x="+cx+" y="+(cy-fs*0.55)+" text-anchor=middle fill='"+t.text+"' font-size="+fs+" font-weight=800 font-family=Nunito>"+fmt(spent)+"</text>"
     +"<text x="+cx+" y="+(cy+fs*0.65)+" text-anchor=middle fill='"+t.textMuted+"' font-size="+(fs-4)+" font-family=Nunito>of "+fmt(total)+"</text>"
     +"<text x="+cx+" y="+(cy+fs*1.85)+" text-anchor=middle fill='"+fc+"' font-size="+(fs-2)+" font-weight=800 font-family=Nunito>"+Math.round(pct*100)+"%</text>"
@@ -518,8 +520,8 @@ function render(){
   var durBtns=DURATIONS.map(function(d){return btn("dur",d,"border:none;border-radius:17px;padding:5px "+(tablet?"0":"10px")+";font-size:11px;font-weight:800;cursor:pointer;background:"+(S.duration===d?t.bgPillActive:"transparent")+";color:"+(S.duration===d?t.text:t.textMuted)+(tablet?";flex:1":""),tablet?d:d.slice(0,2));}).join("");
   if(tablet){
     document.getElementById("root").innerHTML=toastEl
-      +"<div style='display:flex;height:100dvh;background:"+t.bg+"'>"
-      +"<div style='width:"+SIDEBAR+"px;flex-shrink:0;background:"+t.sidebarBg+";border-right:1px solid "+t.sidebarBorder+";display:flex;flex-direction:column;padding:32px 0 24px'>"
+      +"<div style='display:flex;height:100dvh;background:"+t.bg+";position:relative'>"
+      +"<div style='width:"+SIDEBAR+"px;flex-shrink:0;background:"+t.sidebarBg+";border-right:1px solid "+t.sidebarBorder+";display:flex;flex-direction:column;padding:32px 0 24px;position:relative;z-index:10'>"
       +"<div style='padding:0 24px 28px'><div style='font-size:10px;color:"+t.textMuted+";letter-spacing:3px;text-transform:uppercase;margin-bottom:4px'>Our Budget</div>"
       +"<div style='font-family:Playfair Display,serif;font-size:20px;font-weight:700;color:"+t.text+";line-height:1.2'>Spend<br>Together</div>"
       +"<div style='margin-top:10px;font-size:11px;color:"+syncC+";font-weight:800;background:"+syncC+"18;border-radius:99px;padding:3px 10px;display:inline-block'>"+syncL+"</div></div>"
@@ -591,9 +593,11 @@ function render(){
     +"var db=getDatabase(app);"
     +"var cr=ref(db,'our-budget/categories');"
     +"var er=ref(db,'our-budget/expenses');"
-    +"fbSet=set;fbCatsRef=cr;fbExpsRef=er;"
+    +"var ir=ref(db,'our-budget/income');"
+    +"fbSet=set;fbCatsRef=cr;fbExpsRef=er;fbIncRef=ir;"
     +"onValue(cr,function(s){var v=s.val();if(v&&Array.isArray(v)){S.cats=v;lsS('budget_cats_v11',v);render();}});"
-    +"onValue(er,function(s){var v=s.val();if(v&&Array.isArray(v)){S.exps=v;lsS('budget_exps_v11',v);}S.syncStatus='synced';render();});"
+    +"onValue(er,function(s){var v=s.val();if(v&&Array.isArray(v)){S.exps=v;lsS('budget_exps_v11',v);render();}});"
+    +"onValue(ir,function(s){var v=s.val();if(v&&typeof v==='object'&&v!==null){S.income=v;lsS('budget_income_v11',v);}S.syncStatus='synced';render();});"
     +"}catch(e){S.syncStatus='error';render();console.error(e);}";
   document.head.appendChild(sc);
 })();

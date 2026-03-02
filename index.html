@@ -318,7 +318,7 @@ function budgetPage(t,tablet){
       +"</div></div>";
   }
   h+="<div style='display:flex;align-items:center;gap:"+(tablet?24:16)+"px;background:"+t.bgSummary+";border-radius:"+(tablet?24:20)+"px;padding:"+(tablet?"24px 28px":"16px 18px")+";margin-bottom:"+(tablet?20:12)+"px;border:1px solid "+t.borderCard+"'>";
-  h+=makeSVGRing(totS,pInc||totB,t,tablet?150:128);
+  h+=makeSVGRing(totS,totB,t,tablet?150:128);
   h+="<div style='flex:1'>";
   if(pInc>0)h+=statRow("Income",fmtD(pInc),t.accent,false,t);
   h+=statRow("Budgeted",fmt(totB),t.textSub,false,t);
@@ -522,11 +522,11 @@ function render(){
     document.getElementById("root").innerHTML=toastEl
       +"<div style='display:flex;height:100dvh;background:"+t.bg+";position:relative'>"
       +"<div style='width:"+SIDEBAR+"px;flex-shrink:0;background:"+t.sidebarBg+";border-right:1px solid "+t.sidebarBorder+";display:flex;flex-direction:column;padding:32px 0 24px;position:relative;z-index:10'>"
-      +"<div style='padding:0 24px 28px'><div style='font-size:10px;color:"+t.textMuted+";letter-spacing:3px;text-transform:uppercase;margin-bottom:4px'>Our Budget</div>"
+      +"<div style='padding:0 24px 12px'><div style='font-size:10px;color:"+t.textMuted+";letter-spacing:3px;text-transform:uppercase;margin-bottom:4px'>Our Budget</div>"
       +"<div style='font-family:Playfair Display,serif;font-size:20px;font-weight:700;color:"+t.text+";line-height:1.2'>Spend<br>Together</div>"
       +"<div style='margin-top:10px;font-size:11px;color:"+syncC+";font-weight:800;background:"+syncC+"18;border-radius:99px;padding:3px 10px;display:inline-block'>"+syncL+"</div></div>"
       +"<div style='padding:0 24px 24px;border-bottom:1px solid "+t.sidebarBorder+"'>"
-      +makeSVGRing(totS,pInc||totB,t,210)
+      +makeSVGRing(totS,totB,t,210)
       +"<div style='margin-top:14px'>"
       +(pInc>0?statRow("Income",fmtD(pInc),t.accent,false,t):"")
       +statRow("Budgeted",fmt(totB),t.textSub,false,t)
@@ -541,7 +541,7 @@ function render(){
       +"<span style='font-weight:800;font-size:13px;color:"+t.text+"'>"+periodLabel()+"</span>"
       +btn("shift","1","background:none;border:none;color:"+t.textMuted+";font-size:20px;cursor:pointer;padding:0 8px","&#8250;")
       +"</div></div>"
-      +"<div style='flex:1;padding:12px 12px 0'>"
+      +"<div style='flex:1;padding:4px 12px 0;overflow-y:auto'>"
       +NAV.map(function(item){return btn("view",item.id,"display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border-radius:12px;border:none;cursor:pointer;font-size:14px;font-weight:800;background:"+(S.view===item.id?t.accent+"18":"transparent")+";color:"+(S.view===item.id?t.accent:t.textMuted)+";margin-bottom:2px","<span style='font-size:18px;width:24px;text-align:center'>"+item.icon+"</span>"+item.label);}).join("")
       +"</div>"
       +"<div style='padding:0 12px'>"

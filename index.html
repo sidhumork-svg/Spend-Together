@@ -375,6 +375,7 @@ function addPage(t,tablet){
       +"<div style='font-size:10px;color:"+t.textMuted+";letter-spacing:2px;text-transform:uppercase;font-weight:800;margin-bottom:6px'>Date</div>"
       +inp("dateInput","date",""+IS+";color-scheme:"+(getIsDark()?"dark":"light")+";margin-bottom:28px",S.addForm.date,"")
       +btn("addexp","","width:100%;padding:18px;background:"+t.accentGrad+";color:"+t.accentText+";border:none;border-radius:14px;font-size:16px;font-weight:900;cursor:pointer;opacity:"+(canSave?1:0.4),"Save Expense")
+      +btn("view","budget","width:100%;padding:14px;background:"+t.bgPill+";border:1px solid "+t.borderCard+";border-radius:14px;font-size:15px;cursor:pointer;color:"+t.textMuted+";margin-top:10px","Cancel")
       +"</div></div>";
   }
   return "<div style='padding:10px 16px 24px;animation:slideUp 0.25s ease'>"

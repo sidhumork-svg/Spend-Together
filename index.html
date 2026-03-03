@@ -80,7 +80,8 @@ var S={
   incEdit:"",
   toast:null,
   syncStatus:"connecting",
-  cachedLat:null,cachedLng:null
+  cachedLat:null,cachedLng:null,
+  emojiPicker:null
 };
 
 var fbSet=null,fbCatsRef=null,fbExpsRef=null;
@@ -228,11 +229,9 @@ function wireInputs(){
     "amtInput":function(v){S.addForm.amount=v;},
     "noteInput":function(v){S.addForm.note=v;},
     "dateInput":function(v){S.addForm.date=v;},
-    "editEmoji":function(v){if(S.editCat)S.editCat.emoji=v;},
     "editName":function(v){if(S.editCat)S.editCat.name=v;},
     "editBudget":function(v){if(S.editCat)S.editCat.budget=v;},
     "editColor":function(v){if(S.editCat)S.editCat.color=v;},
-    "newEmoji":function(v){S.newCat.emoji=v;},
     "newName":function(v){S.newCat.name=v;},
     "newBudget":function(v){S.newCat.budget=v;},
     "newColor":function(v){S.newCat.color=v;}
@@ -277,6 +276,8 @@ document.addEventListener("click",function(e){
       else if(act==="savecat")handleSaveEditCat();
       else if(act==="addcat")handleAddCat();
       else if(act==="theme")cycleTheme();
+      else if(act==="emojipick"){S.emojiPicker=val;render();}
+      else if(act==="emojiset"){if(S.emojiPicker==="new")S.newCat.emoji=val;else if(S.emojiPicker==="edit"&&S.editCat)S.editCat.emoji=val;S.emojiPicker=null;render();}
       else if(act==="export")exportData();
       else if(act==="shift")shiftPeriod(Number(val));
       return;
@@ -416,6 +417,19 @@ function historyPage(t,tablet){
   return h+"</div></div>";
 }
 
+function makeEmojiPicker(currentEmoji,pickerId,t){
+  var emojis=["\uD83D\uDED2","\uD83C\uDF7D\uFE0F","\uD83D\uDE97","\u26A1","\uD83C\uDFAC","\uD83D\uDECD\uFE0F","\uD83D\uDC8A","\uD83C\uDFE6","\uD83C\uDFE0","\u2708\uFE0F","\uD83C\uDF93","\uD83D\uDC76","\uD83D\uDC36","\uD83D\uDC31","\uD83D\uDCAA","\uD83C\uDFAE","\uD83D\uDCF1","\uD83C\uDF55","\u2615","\uD83C\uDF81","\uD83D\uDEC0","\uD83D\uDEE0\uFE0F","\uD83C\uDF3F","\uD83D\uDC8D","\uD83D\uDE8C","\uD83D\uDE82","\u26FD","\uD83C\uDFCB\uFE0F","\uD83C\uDFB5","\uD83C\uDFA8","\uD83D\uDCDA","\uD83E\uDDF4","\uD83C\uDF77","\uD83C\uDFD6\uFE0F","\uD83C\uDFAD","\uD83D\uDC20","\uD83C\uDF38","\uD83D\uDC8E","\uD83C\uDFAA","\uD83E\uDDC1","\uD83C\uDF2E","\uD83C\uDF63","\uD83C\uDFAF","\uD83C\uDFB8","\uD83C\uDFC0","\u26BD","\uD83C\uDFBE","\uD83C\uDF0D","\uD83D\uDD11","\uD83D\uDCA1","\uD83E\uDDE0"];
+  var btnStyle="background:"+t.bgPill+";border:1px solid "+t.borderCard+";border-radius:10px;width:44px;height:44px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;";
+  var grid=emojis.map(function(e){return btn("emojiset",e,btnStyle+(e===currentEmoji?";outline:2px solid "+t.accent:""),e);}).join("");
+  return "<div style='margin-bottom:12px'>"
+    +"<div style='font-size:10px;color:"+t.textMuted+";text-transform:uppercase;font-weight:800;margin-bottom:6px'>Emoji</div>"
+    +btn("emojipick",pickerId,"width:56px;height:56px;font-size:28px;border-radius:12px;border:2px solid "+(S.emojiPicker===pickerId?t.accent:t.borderCard)+";background:"+t.bgCard+";cursor:pointer;display:flex;align-items:center;justify-content:center",currentEmoji||"\uD83D\uDCE6")
+    +(S.emojiPicker===pickerId
+      ?"<div style='margin-top:8px;padding:10px;background:"+t.bgCard+";border:1px solid "+t.borderCard+";border-radius:16px;display:flex;flex-wrap:wrap;gap:6px'>"+grid+"</div>"
+      :"")
+    +"</div>";
+}
+
 function managePage(t,tablet){
   var IS="width:100%;background:"+t.bgInput+";border:1px solid "+t.borderInput+";border-radius:12px;padding:12px 14px;color:"+t.text+";font-size:15px;font-weight:700;outline:none;margin-bottom:14px;display:block";
   var h="<div style='padding:"+(tablet?"24px":"8px 16px")+"'><div style='max-width:"+(tablet?680:9999)+"px;margin:"+(tablet?"0 auto":0)+"'>"
@@ -425,9 +439,9 @@ function managePage(t,tablet){
     var isEdit=S.editCat&&S.editCat.id===cat.id;
     h+="<div style='background:"+t.bgCard+";border-radius:16px;padding:14px;border:1px solid "+t.borderCard+"'>";
     if(isEdit){
-      h+="<div style='display:flex;gap:10px;margin-bottom:10px'>"
-        +inp("editEmoji","text",""+IS+";width:52px;text-align:center;font-size:22px;padding:8px;margin-bottom:0",S.editCat.emoji,"maxlength=2")
-        +inp("editName","text",""+IS+";flex:1;margin-bottom:0",S.editCat.name,"placeholder=Name")
+      h+="<div style='margin-bottom:10px'>"
+        +makeEmojiPicker(S.editCat.emoji,"edit",t)
+        +inp("editName","text",""+IS+";margin-bottom:0",S.editCat.name,"placeholder=Name")
         +"</div>"
         +"<div style='display:flex;gap:10px;margin-bottom:12px'>"
         +"<div style='flex:1'><div style='font-size:10px;color:"+t.textMuted+";letter-spacing:2px;text-transform:uppercase;font-weight:800;margin-bottom:6px'>Budget ($)</div>"
@@ -456,11 +470,9 @@ function managePage(t,tablet){
   var nc=S.newCat;
   h+="<div style='background:"+t.bgCard+";border-radius:16px;padding:18px;border:1px dashed "+t.borderDash+";margin-bottom:14px'>"
     +"<h3 style='font-size:13px;font-weight:800;color:"+t.textMuted+";text-transform:uppercase;margin-bottom:14px'>+ New Category</h3>"
-    +"<div style='display:flex;gap:10px;margin-bottom:12px'>"
-    +"<div><div style='font-size:10px;color:"+t.textMuted+";text-transform:uppercase;font-weight:800;margin-bottom:6px'>Emoji</div>"
-    +inp("newEmoji","text",""+IS+";width:56px;text-align:center;font-size:22px;padding:8px;margin-bottom:0",nc.emoji,"maxlength=2")+"</div>"
-    +"<div style='flex:1'><div style='font-size:10px;color:"+t.textMuted+";text-transform:uppercase;font-weight:800;margin-bottom:6px'>Name</div>"
-    +inp("newName","text",""+IS+";margin-bottom:0",nc.name,"placeholder='e.g. Rent'")+"</div></div>"
+    +makeEmojiPicker(nc.emoji,"new",t)
+    +"<div style='margin-bottom:12px'><div style='font-size:10px;color:"+t.textMuted+";text-transform:uppercase;font-weight:800;margin-bottom:6px'>Name</div>"
+    +inp("newName","text",""+IS+";margin-bottom:0",nc.name,"placeholder='e.g. Rent'")+"</div>"
     +"<div style='display:flex;gap:10px;margin-bottom:14px'>"
     +"<div style='flex:1'><div style='font-size:10px;color:"+t.textMuted+";text-transform:uppercase;font-weight:800;margin-bottom:6px'>Budget ($)</div>"
     +inp("newBudget","number",""+IS+";margin-bottom:0",nc.budget,"inputmode=decimal placeholder='e.g. 500'")+"</div>"
@@ -525,7 +537,7 @@ function render(){
   var page=S.view==="budget"?budgetPage(t,tablet):S.view==="add"?addPage(t,tablet):S.view==="history"?historyPage(t,tablet):managePage(t,tablet);
   var SIDEBAR=260;
   var navBtns=NAV.map(function(tab){
-    return btn("view",tab.id,"flex:1;border:none;background:none;padding:12px 0 10pt;cursor:pointer;color:"+(S.view===tab.id?t.accent:t.textNav),
+    return btn("view",tab.id,"flex:1;border:none;background:none;padding:12px 0 10px;cursor:pointer;color:"+(S.view===tab.id?t.accent:t.textNav),
       "<div style='font-size:"+(tab.id==="add"?22:18)+"px'>"+tab.icon+"</div><div style='font-size:10px;margin-top:3px;font-weight:"+(S.view===tab.id?900:600)+"'>"+tab.label+"</div>");
   }).join("");
   var toastEl="<div id=toast style='display:none;position:fixed;background:"+t.accent+";color:"+t.accentText+";padding:10px 22px;border-radius:99px;font-size:14px;font-weight:800;z-index:300;white-space:nowrap;pointer-events:none;"+(tablet?"bottom:32px;left:50%;transform:translateX(-50%)":"bottom:80px;left:50%;transform:translateX(-50%)")+"'>"+(S.toast||"")+"</div>";

@@ -186,17 +186,25 @@ function makeSVGRing(spent,total,t,size){
   size=size||128;
   var pct=total>0?Math.min(spent/total,1):0;
   var r=size*0.42,cx=size/2,cy=size/2,circ=2*Math.PI*r;
-  var fc=pct>=1?t.over:pct>=0.85?t.near:t.accent;
   var fs=size<110?11:15;
-  var dash=Number((pct*circ).toFixed(4));
-  var gap=Number(circ.toFixed(4));
   var sw=Number((size*0.078).toFixed(4));
+  var overallColor=pct>=1?t.over:pct>=0.85?t.near:t.accent;
   var svg="<svg width='"+size+"' height='"+size+"' viewBox='0 0 "+size+" "+size+"' style='display:block;flex-shrink:0;overflow:visible'>";
   svg+="<circle cx='"+cx+"' cy='"+cy+"' r='"+r+"' fill='none' stroke='"+t.fillBg+"' stroke-width='"+sw+"'/>";
-  svg+="<circle cx='"+cx+"' cy='"+cy+"' r='"+r+"' fill='none' stroke='"+fc+"' stroke-width='"+sw+"' stroke-dasharray='"+dash+" "+gap+"' stroke-dashoffset='0' stroke-linecap='round' transform='rotate(-90,"+cx+","+cy+")'></circle>";
+  var cats=S.cats;var offsetLen=0;
+  for(var i=0;i<cats.length;i++){
+    var catSpent=spentFor(cats[i].id);
+    if(catSpent<=0)continue;
+    var catPct=total>0?catSpent/total:0;
+    var segLen=Number((catPct*circ).toFixed(4));
+    var gap=Number((circ-segLen).toFixed(4));
+    var dashOffset=Number((-offsetLen).toFixed(4));
+    svg+="<circle cx='"+cx+"' cy='"+cy+"' r='"+r+"' fill='none' stroke='"+cats[i].color+"' stroke-width='"+sw+"' stroke-dasharray='"+segLen+" "+gap+"' stroke-dashoffset='"+dashOffset+"' stroke-linecap='butt' transform='rotate(-90,"+cx+","+cy+")'></circle>";
+    offsetLen+=segLen;
+  }
   svg+="<text x='"+cx+"' y='"+(cy-fs*0.55)+"' text-anchor='middle' fill='"+t.text+"' font-size='"+fs+"' font-weight='800' font-family='Nunito,sans-serif'>"+fmt(spent)+"</text>";
   svg+="<text x='"+cx+"' y='"+(cy+fs*0.65)+"' text-anchor='middle' fill='"+t.textMuted+"' font-size='"+(fs-4)+"' font-family='Nunito,sans-serif'>of "+fmt(total)+"</text>";
-  svg+="<text x='"+cx+"' y='"+(cy+fs*1.85)+"' text-anchor='middle' fill='"+fc+"' font-size='"+(fs-2)+"' font-weight='800' font-family='Nunito,sans-serif'>"+Math.round(pct*100)+"%</text>";
+  svg+="<text x='"+cx+"' y='"+(cy+fs*1.85)+"' text-anchor='middle' fill='"+overallColor+"' font-size='"+(fs-2)+"' font-weight='800' font-family='Nunito,sans-serif'>"+Math.round(pct*100)+"%</text>";
   svg+="</svg>";
   return svg;
 }
@@ -516,7 +524,7 @@ function render(){
   var page=S.view==="budget"?budgetPage(t,tablet):S.view==="add"?addPage(t,tablet):S.view==="history"?historyPage(t,tablet):managePage(t,tablet);
   var SIDEBAR=260;
   var navBtns=NAV.map(function(tab){
-    return btn("view",tab.id,"flex:1;border:none;background:none;padding:12px 0 10px;cursor:pointer;color:"+(S.view===tab.id?t.accent:t.textNav),
+    return btn("view",tab.id,"flex:1;border:none;background:none;padding:12px 0 10pt;cursor:pointer;color:"+(S.view===tab.id?t.accent:t.textNav),
       "<div style='font-size:"+(tab.id==="add"?22:18)+"px'>"+tab.icon+"</div><div style='font-size:10px;margin-top:3px;font-weight:"+(S.view===tab.id?900:600)+"'>"+tab.label+"</div>");
   }).join("");
   var toastEl="<div id=toast style='display:none;position:fixed;background:"+t.accent+";color:"+t.accentText+";padding:10px 22px;border-radius:99px;font-size:14px;font-weight:800;z-index:300;white-space:nowrap;pointer-events:none;"+(tablet?"bottom:32px;left:50%;transform:translateX(-50%)":"bottom:80px;left:50%;transform:translateX(-50%)")+"'>"+(S.toast||"")+"</div>";
@@ -524,20 +532,20 @@ function render(){
   if(tablet){
     document.getElementById("root").innerHTML=toastEl
       +"<div style='display:flex;height:100dvh;background:"+t.bg+";position:relative'>"
-      +"<div style='width:"+SIDEBAR+"px;flex-shrink:0;background:"+t.sidebarBg+";border-right:1px solid "+t.sidebarBorder+";display:flex;flex-direction:column;padding:32px 0 24px;position:relative;z-index:10'>"
-      +"<div style='padding:0 24px 12px'><div style='font-size:10px;color:"+t.textMuted+";letter-spacing:3px;text-transform:uppercase;margin-bottom:4px'>Our Budget</div>"
+      +"<div style='width:"+SIDEBAR+"px;flex-shrink:0;background:"+t.sidebarBg+";border-right:1px solid "+t.sidebarBorder+";display:flex;flex-direction:column;padding:20px 0 16px;position:relative;z-index:10'>"
+      +"<div style='padding:0 24px 8px'><div style='font-size:10px;color:"+t.textMuted+";letter-spacing:3px;text-transform:uppercase;margin-bottom:4px'>Our Budget</div>"
       +"<div style='font-family:Playfair Display,serif;font-size:20px;font-weight:700;color:"+t.text+";line-height:1.2'>Spend<br>Together</div>"
       +"<div style='margin-top:10px;font-size:11px;color:"+syncC+";font-weight:800;background:"+syncC+"18;border-radius:99px;padding:3px 10px;display:inline-block'>"+syncL+"</div></div>"
-      +"<div style='padding:0 24px 24px;border-bottom:1px solid "+t.sidebarBorder+"'>"
-      +makeSVGRing(totS,totB,t,210)
-      +"<div style='margin-top:14px'>"
+      +"<div style='padding:0 24px 14px;border-bottom:1px solid "+t.sidebarBorder+"'>"
+      +makeSVGRing(totS,totB,t,160)
+      +"<div style='margin-top:10px'>"
       +(pInc>0?statRow("Income",fmtD(pInc),t.accent,false,t):"")
       +statRow("Budgeted",fmt(totB),t.textSub,false,t)
       +statRow("Spent",fmtD(totS),totS>totB?t.over:t.accent,true,t)
       +statRow("Remaining",fmtD(rem),rem<0?t.over:t.remaining,false,t)
       +(actSav!==null?statRow("Savings",fmtD(actSav),actSav>=0?t.accent:t.over,false,t):"")
       +"</div></div>"
-      +"<div style='padding:16px 24px;border-bottom:1px solid "+t.sidebarBorder+"'>"
+      +"<div style='padding:10px 24px;border-bottom:1px solid "+t.sidebarBorder+"'>"
       +"<div style='display:flex;background:"+t.bgPill+";border-radius:20px;padding:3px;gap:2px;margin-bottom:10px'>"+durBtns+"</div>"
       +"<div style='display:flex;align-items:center;justify-content:space-between;background:"+t.bgPill+";border-radius:10px;padding:6px 4px'>"
       +btn("shift","-1","background:none;border:none;color:"+t.textMuted+";font-size:20px;cursor:pointer;padding:0 8px","&#8249;")

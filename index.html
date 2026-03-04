@@ -176,7 +176,7 @@ function inPeriod(exp){
 }
 function getPeriodExps(){return S.exps.filter(inPeriod);}
 function spentFor(catId){return getPeriodExps().filter(function(e){return e.catId===catId;}).reduce(function(s,e){return s+e.amount;},0);}
-function totalBudget(){return S.cats.reduce(function(s,c){return s+c.budget;},0);}
+function totalBudget(){var b=S.cats.reduce(function(s,c){return s+c.budget;},0);return S.duration==="Yearly"?b*12:b;}
 function totalSpent(){return S.cats.reduce(function(s,c){return s+spentFor(c.id);},0);}
 function periodIncome(){
   if(!S.income||!S.income.monthly)return 0;

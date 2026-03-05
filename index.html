@@ -427,7 +427,7 @@ function catDetailPage(t,tablet){
   var exps=getPeriodExps().filter(function(e){return e.catId===cat.id;});
   var spent=spentFor(cat.id),pct=cat.budget>0?spent/cat.budget:0;
   var col=fillColor(pct,cat.color,t);
-  var IS="width:100%;background:"+t.bgInput+";border:1px solid "+t.borderInput+";border-radius:12px;padding:12px 14px;color:"+t.text+";font-size:15px;font-weight:700;outline:none;display:block";
+  var IS="width:100%;background:"+t.bgInput+";border:1px solid "+t.borderInput+";border-radius:12px;padding:12px 14px;color:"+t.text+";font-size:15px;font-weight:700;outline:none;display:block;box-sizing:border-box;max-width:100%";
   var pad=tablet?"24px":"8px 16px";
   var h="<div style='padding:"+pad+"'>";
   h+=btn("backtoBudget","","display:flex;align-items:center;gap:6px;background:none;border:none;color:"+t.textMuted+";font-size:13px;font-weight:800;cursor:pointer;padding:0;margin-bottom:16px","&#8249; Back");
@@ -448,7 +448,7 @@ function catDetailPage(t,tablet){
     h+="<div style='font-size:11px;color:"+t.textMuted+";font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px'>New Expense &mdash; "+esc(cat.name)+"</div>";
     h+=inp("detailAmt","number",IS+";margin-bottom:10px",S.addDetailForm.amount,"inputmode=decimal placeholder='Amount ($)'");
     h+=inp("detailNote","text",IS+";margin-bottom:10px",S.addDetailForm.note,"placeholder='Note (optional)'");
-    h+=inp("detailDate","date",IS+";margin-bottom:12px",S.addDetailForm.date,"");
+    h+=inp("detailDate","date",IS+";margin-bottom:12px;-webkit-appearance:none;appearance:none;text-align:left",S.addDetailForm.date,"");
     h+="<div style='display:flex;gap:8px'>";
     h+=btn("savedetailexp","","flex:1;padding:12px;background:"+t.accentGrad+";color:"+t.accentText+";border:none;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer","Save");
     h+=btn("hideaddform","","flex:1;padding:12px;background:"+t.bgPill+";border:1px solid "+t.borderCard+";border-radius:12px;font-size:14px;cursor:pointer;color:"+t.textMuted,"Cancel");

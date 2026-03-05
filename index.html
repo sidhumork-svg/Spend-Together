@@ -35,8 +35,6 @@ window.onerror=function(m,s,l){
 };
 </script>
 <script>
-var FB_CONFIG={apiKey:"AIzaSyANRAg_zEiffHkxW1CzNKBSYYIaYknq-6s",authDomain:"spend-together-1374d.firebaseapp.com",databaseURL:"https://spend-together-1374d-default-rtdb.firebaseio.com",projectId:"spend-together-1374d",storageBucket:"spend-together-1374d.firebasestorage.app",messagingSenderId:"574836971924",appId:"1:574836971924:web:82689a74d1cd4c9cc19781"};
-var HOUSEHOLD="our-budget";
 var LS_CATS="budget_cats_v11",LS_EXPS="budget_exps_v11",LS_THEME="budget_theme_v11",LS_INCOME="budget_income_v11",LS_WISH="budget_wish_v11",LS_PEOPLE="budget_people_v11";
 var MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 var DURATIONS=["Weekly","Monthly","Yearly"];
@@ -88,13 +86,14 @@ var S={
   addDetailForm:{amount:"",note:"",date:new Date().toISOString().split("T")[0]},
   wishlist:lsG(LS_WISH,[]),
   wishForm:{name:"",cost:"",priority:"Medium",who:"Both",type:"Want"},
-  wishEdit:null,
   people:lsG(LS_PEOPLE,{p1:"Person 1",p2:"Person 2"}),
   editingPeople:false
 };
 
 var fbSet=null,fbCatsRef=null,fbExpsRef=null;
 var fbIncRef=null,fbWishRef=null,fbPeopleRef=null;
+var _activeInput=null;
+
 function savWish(v){S.wishlist=v;lsS(LS_WISH,v);if(fbSet&&fbWishRef){try{fbSet(fbWishRef,v);}catch(e){}}}
 function savCats(c){S.cats=c;lsS(LS_CATS,c);if(fbSet&&fbCatsRef){try{fbSet(fbCatsRef,c);}catch(e){}}}
 function savExps(e){S.exps=e;lsS(LS_EXPS,e);if(fbSet&&fbExpsRef){try{fbSet(fbExpsRef,e);}catch(e){}}}
@@ -249,12 +248,14 @@ function wireInputs(){
     "detailNote":function(v){S.addDetailForm.note=v;},
     "detailDate":function(v){S.addDetailForm.date=v;},
     "p1name":function(v){S.people.p1=v||"Person 1";lsS(LS_PEOPLE,S.people);if(fbSet&&fbPeopleRef){try{fbSet(fbPeopleRef,S.people);}catch(e){}}},
-"p2name":function(v){S.people.p2=v||"Person 2";lsS(LS_PEOPLE,S.people);if(fbSet&&fbPeopleRef){try{fbSet(fbPeopleRef,S.people);}catch(e){}}}
+    "p2name":function(v){S.people.p2=v||"Person 2";lsS(LS_PEOPLE,S.people);if(fbSet&&fbPeopleRef){try{fbSet(fbPeopleRef,S.people);}catch(e){}}}
   };
   Object.keys(m).forEach(function(id){
     var el=document.getElementById(id);
     if(el){
       var fn=m[id];
+      el.addEventListener("focus",function(){_activeInput=id;});
+      el.addEventListener("blur",function(){_activeInput=null;});
       el.addEventListener("input",function(){fn(this.value);});
       el.addEventListener("change",function(){fn(this.value);});
     }
@@ -753,10 +754,10 @@ function render(){
     +"var wr=ref(db,'our-budget/wishlist');"
     +"var pr=ref(db,'our-budget/people');"
     +"fbSet=set;fbCatsRef=cr;fbExpsRef=er;fbIncRef=ir;fbWishRef=wr;fbPeopleRef=pr;"
-    +"onValue(cr,function(s){var v=s.val();if(v&&Array.isArray(v)){S.cats=v;lsS('budget_cats_v11',v);render();}});"
-    +"onValue(er,function(s){var v=s.val();if(v&&Array.isArray(v)){S.exps=v;lsS('budget_exps_v11',v);render();}});"
-    +"onValue(ir,function(s){var v=s.val();if(v&&typeof v==='object'&&v!==null){S.income=v;lsS('budget_income_v11',v);}S.syncStatus='synced';render();});"
-    +"onValue(wr,function(s){var v=s.val();if(v&&Array.isArray(v)){S.wishlist=v;lsS('budget_wish_v11',v);render();}});"
+    +"onValue(cr,function(s){var v=s.val();if(v&&Array.isArray(v)){S.cats=v;lsS('budget_cats_v11',v);if(!_activeInput)render();}});"
+    +"onValue(er,function(s){var v=s.val();if(v&&Array.isArray(v)){S.exps=v;lsS('budget_exps_v11',v);if(!_activeInput)render();}});"
+    +"onValue(ir,function(s){var v=s.val();if(v&&typeof v==='object'&&v!==null){S.income=v;lsS('budget_income_v11',v);}S.syncStatus='synced';if(!_activeInput)render();});"
+    +"onValue(wr,function(s){var v=s.val();if(v&&Array.isArray(v)){S.wishlist=v;lsS('budget_wish_v11',v);if(!_activeInput)render();}});"
     +"onValue(pr,function(s){var v=s.val();if(v&&typeof v==='object'&&v!==null){S.people=v;lsS('budget_people_v11',v);if(!S.editingPeople)render();}});"
     +"}catch(e){S.syncStatus='error';render();console.error(e);}";
   document.head.appendChild(sc);

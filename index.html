@@ -248,8 +248,8 @@ function wireInputs(){
     "detailAmt":function(v){S.addDetailForm.amount=v;},
     "detailNote":function(v){S.addDetailForm.note=v;},
     "detailDate":function(v){S.addDetailForm.date=v;},
-    "p1name":function(v){S.people.p1=v||"Person 1";savPeople(S.people);},
-    "p2name":function(v){S.people.p2=v||"Person 2";savPeople(S.people);}
+    "p1name":function(v){S.people.p1=v||"Person 1";lsS(LS_PEOPLE,S.people);if(fbSet&&fbPeopleRef){try{fbSet(fbPeopleRef,S.people);}catch(e){}}},
+"p2name":function(v){S.people.p2=v||"Person 2";lsS(LS_PEOPLE,S.people);if(fbSet&&fbPeopleRef){try{fbSet(fbPeopleRef,S.people);}catch(e){}}}
   };
   Object.keys(m).forEach(function(id){
     var el=document.getElementById(id);

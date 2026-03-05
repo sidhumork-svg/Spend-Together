@@ -757,7 +757,7 @@ function render(){
     +"onValue(er,function(s){var v=s.val();if(v&&Array.isArray(v)){S.exps=v;lsS('budget_exps_v11',v);render();}});"
     +"onValue(ir,function(s){var v=s.val();if(v&&typeof v==='object'&&v!==null){S.income=v;lsS('budget_income_v11',v);}S.syncStatus='synced';render();});"
     +"onValue(wr,function(s){var v=s.val();if(v&&Array.isArray(v)){S.wishlist=v;lsS('budget_wish_v11',v);render();}});"
-    +"onValue(pr,function(s){var v=s.val();if(v&&typeof v==='object'&&v!==null){S.people=v;lsS('budget_people_v11',v);render();}});"
+    +"onValue(pr,function(s){var v=s.val();if(v&&typeof v==='object'&&v!==null){S.people=v;lsS('budget_people_v11',v);if(!S.editingPeople)render();}});"
     +"}catch(e){S.syncStatus='error';render();console.error(e);}";
   document.head.appendChild(sc);
 })();
